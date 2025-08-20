@@ -1,0 +1,11 @@
+.vscode
+node_modules/
+.git/
+tests/
+development/
+previous/
+
+src/
+tsup.config.ts
+tsconfig.json
+postman/

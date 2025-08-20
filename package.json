@@ -1,0 +1,36 @@
+{
+  "name": "anedya-sdk",
+  "version": "0.0.1",
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "test": "node tests/test.mjs"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.3"
+  },
+  "keywords": [
+    "IoT",
+    "Anedya",
+    "SDK",
+    "JavaScript",
+    "TypeScript",
+    "commands",
+    "data-access",
+    "cloud",
+    "device-management",
+    "API",
+    "browser"
+  ]
+}
