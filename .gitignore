@@ -3,5 +3,5 @@ tests/
 development/
 previous/
 
-# dist/
+dist/
 postman/
