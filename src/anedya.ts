@@ -9,7 +9,7 @@ import { NewClient } from "./client";
 import {NewNode} from "./node";
 
 interface IAnedya {
-  NewConfig(tokenId: string, token: string, testMode): NewConfig;
+  NewConfig(tokenId: string, token: string): NewConfig;
   NewClient(configData: NewConfig): NewClient;
   NewNode(client: NewClient, nodeId: string): NewNode;
 }

@@ -225,9 +225,6 @@ export interface IAnedyaDeleteKeyReq {
   };
   key: string;
 }
-
-IAnedyaDeleteKeyReq
-
 export class AnedyaDeleteKeyReq implements IAnedyaDeleteKeyReq {
   constructor(
     public namespace: {
