@@ -22,6 +22,6 @@ const connect_config = anedya.NewConfig(tokenId, token);
 const client = anedya.NewClient(connect_config);
 const node_1 = anedya.NewNode(client, NodeId);
 
-const getDataReq = new AnedyaGetDataRequest(variableIdentifier,fromTime,toTime);
-const res = await node_1.getData(getDataReq);
+const req = new AnedyaGetDataReq(variableIdentifier,fromTime,toTime);
+const res = await node_1.getData(req);
 ```
