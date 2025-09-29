@@ -1,4 +1,4 @@
-[<img alt="PyPI" src="https://img.shields.io/npm/v/%40anedyasystems%2Fanedya-frontend-sdk?style=for-the-badge">](https://www.npmjs.com/package/@anedyasystems/anedya-frontend-sdk)&nbsp;&nbsp;[<img alt="Anedya Documentation" src="https://img.shields.io/badge/Anedya-Documentation-blue?style=for-the-badge">](https://docs.anedya.io?utm_source=github&utm_medium=link&utm_campaign=github-sdk&utm_content=python)
+[<img alt="PyPI" src="https://img.shields.io/npm/v/%40anedyasystems%2Fanedya-frontend-sdk?style=for-the-badge">](https://www.npmjs.com/package/@anedyasystems/anedya-frontend-sdk)&nbsp;&nbsp;[<img alt="Anedya Documentation" src="https://img.shields.io/badge/Anedya-Documentation-blue?style=for-the-badge">](https://docs.anedya.io?utm_source=github&utm_medium=link&utm_campaign=github-sdk&utm_content=js)
 
 
 <!---<div style="width:20%; margin:0 auto;margin-bottom:50px;margin-top:50px;">-->
@@ -15,7 +15,7 @@ The Anedya SDK is a JavaScript/TypeScript library that allows you to access the 
 ## Usage
 
 ```javascript
-import { Anedya, AnedyaGetDataRequest, AnedyaGetDataResponse} from "@anedyasystems/anedya-frontend-sdk";
+import { Anedya, AnedyaGetDataReq, AnedyaGetDataResp} from "@anedyasystems/anedya-frontend-sdk";
 
 const anedya = new Anedya();
 const connect_config = anedya.NewConfig(tokenId, token);
@@ -23,6 +23,5 @@ const client = anedya.NewClient(connect_config);
 const node_1 = anedya.NewNode(client, NodeId);
 
 const getDataReq = new AnedyaGetDataRequest(variableIdentifier,fromTime,toTime);
-let getData_resp = new AnedyaGetDataResponse();
-res = await node_1.getDataBetween(getDataReq);
+const res = await node_1.getData(getDataReq);
 ```

@@ -2,18 +2,18 @@
  Access Data from the Anedya platform side api.
 */
 import {
-  AnedyaSetKeyRequest,
+  AnedyaSetKeyReq,
+  IAnedyaDeleteKeyResp,
+  IAnedyaSetKeyResp,
+  IAnedyaGetKeyReq,
+  IAnedyaGetKeyResp,
+  IAnedyaDeleteKeyReq,
+  IAnedyaScanKeysReq,
+  IAnedyaScanKeysResp,
   AnedyaDeleteKeyResp,
-  AnedyaSetKeyResp,
-  AnedyaGetKeyReq,
-  AnedyaGetKeyResp,
-  AnedyaDeleteKeyReq,
-  AnedyaScanKeysReq,
   AnedyaScanKeysResp,
-  AnedyaDeleteKeyResponse,
-  AnedyaScanKeysResponse,
-  AnedyaSetKeyResponse,
-  AnedyaGetKeyResponse,
+  AnedyaSetKeyResp,
+  AnedyaGetKeyResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
@@ -31,7 +31,7 @@ export const setKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaSetKeyRequest
+  reqConfig: AnedyaSetKeyReq
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
@@ -75,7 +75,7 @@ export const setKey = async (
       body: JSON.stringify(requestData),
     });
 
-    let res: AnedyaSetKeyResp = new AnedyaSetKeyResponse();
+    let res: IAnedyaSetKeyResp = new AnedyaSetKeyResp();
     try {
       const responseData: _AnedyaSetKeyResp = await response.json();
       res.isSuccess = responseData.success;
@@ -116,7 +116,7 @@ export const getKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaGetKeyReq
+  reqConfig: IAnedyaGetKeyReq
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/getValue`;
   let Id;
@@ -157,7 +157,7 @@ export const getKey = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetKeyResp = new AnedyaGetKeyResponse();
+    let res: IAnedyaGetKeyResp = new AnedyaGetKeyResp();
 
     try {
       const responseData: _AnedyaGetKeyResp = await response.json();
@@ -197,7 +197,7 @@ export const deleteKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaDeleteKeyReq
+  reqConfig: IAnedyaDeleteKeyReq
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/delete`;
   let Id;
@@ -239,7 +239,7 @@ export const deleteKey = async (
       body: JSON.stringify(requestData),
     });
 
-    let res: AnedyaDeleteKeyResp = new AnedyaDeleteKeyResponse();
+    let res: IAnedyaDeleteKeyResp = new AnedyaDeleteKeyResp();
     try {
       const responseData: _AnedyaDeleteKeyResp = await response.json();
       // console.log(responseData);
@@ -275,7 +275,7 @@ export const scanKeys = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaScanKeysReq
+  reqConfig: IAnedyaScanKeysReq
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/scan`;
   let Id;
@@ -321,8 +321,8 @@ export const scanKeys = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaScanKeysResp =
-      new AnedyaScanKeysResponse();
+    let res: IAnedyaScanKeysResp =
+      new AnedyaScanKeysResp();
     try {
       const responseData: _AnedyaScanKeysResp =
         await response.json();

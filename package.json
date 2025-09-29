@@ -20,6 +20,7 @@
   },
   "exports": {
     "import": "./dist/index.mjs",
+    "types": "./dist/index.d.ts",
     "require": "./dist/index.js"
   },
   "scripts": {

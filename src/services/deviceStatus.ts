@@ -2,8 +2,8 @@ import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
 import {
+  IAnedyaGetDeviceStatusResp,
   AnedyaGetDeviceStatusResp,
-  AnedyaGetDeviceStatusResponse,
 } from "../models";
 
 // ------------------------ Device Status -------------------------
@@ -50,7 +50,7 @@ export const getDeviceStatus = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResponse();
+    let res: IAnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResp();
     try {
       const responseData: _AnedyaGetDeviceStatusResp =
         await response.json();

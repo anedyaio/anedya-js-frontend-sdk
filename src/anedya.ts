@@ -9,16 +9,18 @@ import { NewClient } from "./client";
 import {NewNode} from "./node";
 
 interface IAnedya {
-  NewConfig(tokenId: string, token: string): NewConfig;
+  NewConfig(tokenId: string, token: string, testMode?: boolean): NewConfig;
+  NewClient(configData: NewConfig): NewClient;
+  NewNode(client: NewClient, nodeId: string): NewNode;
 }
 
 export class Anedya implements IAnedya {
 
-  NewConfig(tokenId: string, token: string, testMode?: boolean): NewConfig {
-    return new NewConfig(tokenId, token, testMode);
+  NewConfig(tokenId: string, token: string): NewConfig {
+    return new NewConfig(tokenId, token);
   }
 
-  NewClient(configData: NewConfig): any {
+  NewClient(configData: NewConfig): NewClient {
     return new NewClient(configData);
   }
 

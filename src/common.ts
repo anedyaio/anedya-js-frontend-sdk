@@ -14,7 +14,7 @@ export interface _ITimeSeriesData {
 }
 
 
-export interface _errInterface{
+export interface _IError{
   errorMessage: string
   reasonCode: string
 }

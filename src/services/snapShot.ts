@@ -2,9 +2,9 @@ import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
 import {
-  AnedyaGetSnapshotReq,
+  IAnedyaGetSnapshotReq,
+  IAnedyaGetSnapshotResp,
   AnedyaGetSnapshotResp,
-  AnedyaGetSnapshotResponse,
   NodeVariableValue,
   NodeVariableValues,
 } from "../models";
@@ -23,7 +23,7 @@ export const getSnapshot = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  getSnapshotReq: AnedyaGetSnapshotReq
+  getSnapshotReq: IAnedyaGetSnapshotReq
 ): Promise<any> => {
   const url = `${baseUrl}/data/snapshot`;
 
@@ -55,7 +55,7 @@ export const getSnapshot = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetSnapshotResp = new AnedyaGetSnapshotResponse();
+    let res: IAnedyaGetSnapshotResp = new AnedyaGetSnapshotResp();
     try {
       const responseData: _AnedyaGetSnapshotResp =
         await response.json();
@@ -90,7 +90,3 @@ export const getSnapshot = async (
   }
 };
 
-//checks if it works in js
-//add req, comments for req
-//enums
-//remove anedya from names

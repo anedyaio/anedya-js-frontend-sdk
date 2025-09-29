@@ -7,11 +7,11 @@
  */
 
 import {
-  AnedyaGetDataReq,
+  IAnedyaGetDataReq,
+  IAnedyaGetDataResp,
   AnedyaGetDataResp,
-  AnedyaGetDataResponse,
+  IAnedyaGetLatestDataResp,
   AnedyaGetLatestDataResp,
-  AnedyaGetLatestDataResponse,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders, _ITimeSeriesData } from "../common";
@@ -45,7 +45,7 @@ interface _AnedyaGetDataResp {
  *
  * @example
  * ```ts
- * const req = new AnedyaGetDataRequest("temperature", from, to, 100);
+ * const req = new AnedyaGetDataReq("temperature", from, to, 100);
  * const res = await getData(baseUrl, headers, ["node123"], req);
  * if (res.isSuccess && res.isDataAvailable) {
  *   console.log(res.data);
@@ -57,7 +57,7 @@ export const getData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: AnedyaGetDataReq
+  accessDataReq: IAnedyaGetDataReq
 ): Promise<any> => {
   const url = `${baseUrl}/data/getData`;
 
@@ -98,8 +98,8 @@ export const getData = async (
       body: JSON.stringify(requestData),
     });
     // Initialize SDK response object
-    let res: AnedyaGetDataResp =
-      new AnedyaGetDataResponse();
+    let res: IAnedyaGetDataResp =
+      new AnedyaGetDataResp();
     try {
       // Parse raw backend response
       let responseData: _AnedyaGetDataResp = await response.json();
@@ -211,7 +211,7 @@ export const fetchLatestData = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetLatestDataResp = new AnedyaGetLatestDataResponse();
+    let res: IAnedyaGetLatestDataResp = new AnedyaGetLatestDataResp();
     try {
       const responseData: _AnedyaGetLatestDataResp =
         await response.json();

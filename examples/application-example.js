@@ -1,26 +1,25 @@
 const {
   Anedya,
-  AnedyaGetDataRequest,
-  AnedyaGetDataResponse,
-  AnedyaGetSnapshotRequest,
-  AnedyaGetSnapshotResponse,
-  AnedyaGetLatestDataResponse,
-  AnedyaSetKeyRequest,
-  AnedyaGetKeyRequest,
+  AnedyaGetDataReq,
+  AnedyaGetDataResp,
+  AnedyaGetSnapshotReq,
+  AnedyaGetSnapshotResp,
+  AnedyaGetLatestDataResp,
+  AnedyaSetKeyReq,
+  AnedyaGetKeyReq,
   AnedyaScope,
   AnedyaDataType,
-  AnedyaScanKeysResponse,
-  AnedyaScanKeysRequest,
-  AnedyaSetKeyResponse,
-  AnedyaGetKeyResponse,
-  AnedyaDeleteKeyResponse,
-  AnedyaGetDeviceStatusResponse,
-} = require("@anedyasystems/anedya-frontend-sdk");
+  AnedyaScanKeysResp,
+  AnedyaScanKeysReq,
+  AnedyaSetKeyResp,
+  AnedyaGetKeyResp,
+  AnedyaDeleteKeyResp,
+  AnedyaGetDeviceStatusResp,
+} = require("@anedyaio/anedya-js-frontend-sdk");
 
 // Configuration Constants
 const tokenId = "";
-const token =
-  "";
+const token = "";
 const NodeId = "";
 const variableIdentifier = "";
 
@@ -45,19 +44,19 @@ async function getData() {
   try {
     const currentTime = Math.floor(Date.now()); //time in milliseconds
     const twentyFourHoursDelayedTime = currentTime - 86400 * 1000;
-    const req = new AnedyaGetDataRequest(
+    const req = new AnedyaGetDataReq(
       variableIdentifier,
       twentyFourHoursDelayedTime,
       currentTime,
       10
     );
-    let res = new AnedyaGetDataResponse();
+    let res = new AnedyaGetDataResp();
     res = await node_1.getData(req);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
         console.log("Data:", res.data);
       } else {
-        console.log("No data available in requested timestamp!!");
+        console.log("No data available in Reqed timestamp!!");
       }
     } else {
       console.error("Error fetching data:", res.error.errorMessage);
@@ -70,7 +69,7 @@ async function getData() {
 // Example function to get the latest data
 async function getLatestData() {
   try {
-    let res = new AnedyaGetLatestDataResponse();
+    let res = new AnedyaGetLatestDataResp();
     res = await node_1.getLatestData(variableIdentifier);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
@@ -88,13 +87,13 @@ async function getLatestData() {
 
 async function setKey() {
   try {
-    let req = new AnedyaSetKeyRequest(
+    let req = new AnedyaSetKeyReq(
       { scope: AnedyaScope.NODE },
       "temperature",
       30,
       AnedyaDataType.FLOAT
     );
-    let res = new AnedyaSetKeyResponse();
+    let res = new AnedyaSetKeyResp();
     res = await node_1.setKey(req);
 
     if (res.isSuccess) {
@@ -109,8 +108,8 @@ async function setKey() {
 
 async function getKey() {
   try {
-    let req = new AnedyaGetKeyRequest({ scope: "node" }, "temperature");
-    let res = new AnedyaGetKeyResponse();
+    let req = new AnedyaGetKeyReq({ scope: "node" }, "temperature");
+    let res = new AnedyaGetKeyResp();
     res = await node_1.getKey(req);
 
     if (res.isSuccess) {
@@ -125,8 +124,8 @@ async function getKey() {
 
 async function deleteKey() {
   try {
-    let req = new AnedyaGetKeyRequest({ scope: "node" }, "temperature");
-    let res = new AnedyaDeleteKeyResponse();
+    let req = new AnedyaGetKeyReq({ scope: "node" }, "temperature");
+    let res = new AnedyaDeleteKeyResp();
     res = await node_1.deleteKey(req);
 
     if (res.isSuccess) {
@@ -141,14 +140,14 @@ async function deleteKey() {
 
 async function scanKeys() {
   try {
-    let req = new AnedyaScanKeysRequest(
+    let req = new AnedyaScanKeysReq(
       { namespace: { scope: AnedyaScope.NODE } },
       "namespace",
       "asc",
       10,
       0
     );
-    let res = new AnedyaScanKeysResponse();
+    let res = new AnedyaScanKeysResp();
     res = await node_1.scanKeys(req);
 
     if (res.isSuccess) {
@@ -164,7 +163,7 @@ async function scanKeys() {
 // Function to get device status
 async function getDeviceStatus() {
   try {
-    let res = new AnedyaGetDeviceStatusResponse();
+    let res = new AnedyaGetDeviceStatusResp();
     res = await node_1.getDeviceStatus(10);
     console.log("Device Status:", res);
   } catch (error) {
@@ -176,12 +175,12 @@ async function getDeviceStatus() {
 async function getSnapshot() {
   try {
     const currentTime = Math.floor(Date.now() / 1000); //time in seconds
-    let req = new AnedyaGetSnapshotRequest(currentTime, variableIdentifier);
+    let req = new AnedyaGetSnapshotReq(currentTime, variableIdentifier);
 
-    // Initialize response object
-    let res = new AnedyaGetSnapshotResponse();
+    // Initialize Resp object
+    let res = new AnedyaGetSnapshotResp();
 
-    // Make the request
+    // Make the Req
     res = await node_1.getSnapshot(req);
 
     console.log("Snapshot:", res);
@@ -200,5 +199,5 @@ async function getSnapshot() {
   await deleteKey();
   await scanKeys();
   await getDeviceStatus();
-  await getSnapshot();
+  // await getSnapshot();
 })();

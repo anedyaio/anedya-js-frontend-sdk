@@ -8,20 +8,15 @@
  */
 
 import { getData, fetchLatestData } from "./services/accessData";
-import {
-  setKey,
-  getKey,
-  deleteKey,
-  scanKeys,
-} from "./services/valueStore";
+import { setKey, getKey, deleteKey, scanKeys } from "./services/valueStore";
 import { getDeviceStatus } from "./services/deviceStatus";
 import {
-  AnedyaGetDataReq,
-  AnedyaSetKeyRequest,
-  AnedyaGetKeyReq,
-  AnedyaDeleteKeyReq,
-  AnedyaScanKeysReq,
-  AnedyaGetSnapshotReq
+  IAnedyaGetDataReq,
+  AnedyaSetKeyReq,
+  IAnedyaGetKeyReq,
+  IAnedyaDeleteKeyReq,
+  IAnedyaScanKeysReq,
+  IAnedyaGetSnapshotReq,
 } from "./models";
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
@@ -33,36 +28,35 @@ import { getSnapshot } from "./services/snapShot";
  */
 
 export interface INode {
-  //missing func- get snapshot 
   /** Returns the unique identifier of this node */
   getNodeId(): string;
 
   /** Fetch historical time-series data for a given variable */
-  getData(accessDataReq: AnedyaGetDataReq): Promise<any>; 
- 
+  getData(accessDataReq: IAnedyaGetDataReq): Promise<any>;
+
   /** Fetch the most recent data point for a given variable */
-  getLatestData(variableIdentifier: string): Promise<any>; 
+  getLatestData(variableIdentifier: string): Promise<any>;
 
   /** Store a key-value pair in the node’s value store */
-  setKey(reqConfig: AnedyaSetKeyRequest): Promise<any>;
+  setKey(reqConfig: AnedyaSetKeyReq): Promise<any>;
 
   /** Retrieve a value from the node’s value store */
-  getKey(reqConfig: AnedyaGetKeyReq): Promise<any>;
+  getKey(reqConfig: IAnedyaGetKeyReq): Promise<any>;
 
   /** Delete a value from the node’s value store */
-  deleteKey(reqConfig: AnedyaDeleteKeyReq): Promise<any>;
+  deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<any>;
 
   /** Scan through the node’s value store with filters */
-  scanKeys(reqConfig: AnedyaScanKeysReq): Promise<any>; 
+  scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<any>;
 
   /** Get device status (e.g., last contact timestamp) */
   getDeviceStatus(lastContactThreshold: number): Promise<any>;
 
   /**
-  * Returns value of a variable at a particular time for given set of nodes.
-  * Returns nearest datapoint submitted before specified time incase no datapoints found at the exact timestamp.
-  */
-  getSnapshot(reqConfig: AnedyaGetSnapshotReq): Promise<any>;
+   * Returns value of a variable at a particular time for given set of nodes.
+   * Returns nearest datapoint submitted before specified time incase no datapoints found at the exact timestamp.
+   */
+  getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any>;
 }
 
 /**
@@ -132,16 +126,14 @@ export class NewNode implements INode {
    *
    * @example
    * ```ts
-   * const req = new AnedyaGetDataRequest("temperature", Date.now() - 86400000, Date.now(), 100);
+   * const req = new AnedyaGetDataReq("temperature", Date.now() - 86400000, Date.now(), 100);
    * const res = await node.getData(req);
    * if (res.isSuccess && res.isDataAvailable) {
    *   console.log(res.data);
    * }
    * ```
    */
-  async getData(
-    accessDataReq: AnedyaGetDataReq
-  ): Promise<any> {
+  async getData(accessDataReq: IAnedyaGetDataReq): Promise<any> {
     return await getData(
       this.#baseUrl,
       this.#configHeaders,
@@ -197,7 +189,7 @@ export class NewNode implements INode {
    * @example
    * ```ts
    * // Store a floating-point threshold value for a node
-   * const req = new AnedyaSetKeyRequest(
+   * const req = new AnedyaSetKeyReq(
    *   { scope: AnedyaScope.NODE },   // Limit to this node
    *   "temperature",                 // Key name
    *   30,                            // Value
@@ -210,7 +202,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async setKey(reqConfig: AnedyaSetKeyRequest): Promise<any> {
+  async setKey(reqConfig: AnedyaSetKeyReq): Promise<any> {
     return await setKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -232,7 +224,7 @@ export class NewNode implements INode {
    * @example
    * ```ts
    * // Fetch a temperature threshold key stored on this node
-   * const req = new AnedyaGetKeyRequest(
+   * const req = new AnedyaGetKeyReq(
    *   { scope: AnedyaScope.NODE },
    *   "temperature"
    * );
@@ -243,7 +235,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async getKey(reqConfig: AnedyaGetKeyReq): Promise<any> {
+  async getKey(reqConfig: IAnedyaGetKeyReq): Promise<any> {
     return await getKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -252,20 +244,20 @@ export class NewNode implements INode {
     );
   }
 
-    /**
+  /**
    * Deletes a key/value pair from the Node's value store.
    *
    * Scope must match the scope in which the key was originally set:
    * - `AnedyaScope.GLOBAL`: Removes the key from the global store.
    * - `AnedyaScope.NODE`: Removes the key only from this node’s local store.
    *
-   * @param {AnedyaDeleteKeyReq} reqConfig - Config with scope and key name to delete.
+   * @param {IAnedyaDeleteKeyReq} reqConfig - Config with scope and key name to delete.
    * @returns {Promise<any>} Response indicating whether deletion succeeded.
    *
    * @example
    * ```ts
    * // Remove a temperature threshold key stored on this node
-   * const req = new AnedyaDeleteKeyRequest(
+   * const req = new AnedyaDeleteKeyReq(
    *   { scope: AnedyaScope.NODE },
    *   "temperature"
    * );
@@ -276,7 +268,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async deleteKey(reqConfig: AnedyaDeleteKeyReq): Promise<any> {
+  async deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<any> {
     return await deleteKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -285,7 +277,7 @@ export class NewNode implements INode {
     );
   }
 
- /**
+  /**
    * Scans available items in the valuestore in a given namespace, with support for pagination. Can return max 100 items per call.
    *
    *
@@ -298,9 +290,9 @@ export class NewNode implements INode {
    * @example
    * ```ts
    * // Scan all available keys in the NODE namespace, return first 10 in ascending order
-   * const req = new AnedyaScanKeysRequest(
+   * const req = new AnedyaScanKeysReq(
    *   { namespace: { scope: AnedyaScope.NODE } },
-   *   "namespace", 
+   *   "namespace",
    *   "asc",
    *   10,
    *   0
@@ -312,9 +304,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async scanKeys(
-    reqConfig: AnedyaScanKeysReq
-  ): Promise<any> {
+  async scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<any> {
     return await scanKeys(
       this.#baseUrl,
       this.#configHeaders,
@@ -367,7 +357,7 @@ export class NewNode implements INode {
     );
   }
 
-    /**
+  /**
    * Retrieves the value of a variable for one or more nodes at a specific timestamp.
    *
    * The snapshot API returns the value of a variable at the requested time.
@@ -378,20 +368,19 @@ export class NewNode implements INode {
    * This is useful for reconstructing system state at a given point in time
    * (e.g., "What was the temperature at 10:00 AM for node X?").
    *
-   * @param {AnedyaGetSnapshotReq} reqConfig - The snapshot request configuration.
+   * @param {IAnedyaGetSnapshotReq} reqConfig - The snapshot request configuration.
    * @param {number} reqConfig.time - The target timestamp (in UNIX seconds) to query.
    * @param {string} reqConfig.variable - The variable identifier to fetch (e.g., `"temperature"`).
-   * @param {string[]} reqConfig.nodes - The list of node IDs for which to fetch snapshot values.
    *
    * @returns {Promise<any>} A promise resolving to the response object containing:
-   * - `node` (string): the node ID  
-   * - `value` (number): the variable value at or before the given timestamp  
-   * - `timestamp` (number): the timestamp (UNIX seconds) of the returned datapoint  
+   * - `node` (string): the node ID
+   * - `value` (number): the variable value at or before the given timestamp
+   * - `timestamp` (number): the timestamp (UNIX seconds) of the returned datapoint
    *
    * @example
    * ```ts
-   * // Get temperature value for node123 at a specific timestamp
-   * const req = new AnedyaGetSnapshotRequest(1695084912, "temperature", ["node123"]);
+   * // Get temperature value for node at a specific timestamp
+   * const req = new AnedyaGetSnapshotReq(<timestamp>, <variableid>);
    * const res = await node.getSnapshot(req);
    * if (res.isSuccess && res.data.length > 0) {
    *   const snapshot = res.data[0];
@@ -402,19 +391,19 @@ export class NewNode implements INode {
    * @example
    * ```ts
    * // Request snapshots for multiple nodes at the same time
-   * const req = new AnedyaGetSnapshotRequest(1695084912, "humidity", ["node123", "node456"]);
+   * const req = new AnedyaGetSnapshotReq(1695084912, "humidity", ["node123", "node456"]);
    * const res = await node.getSnapshot(req);
    * res.data.forEach((entry) => {
    *   console.log(entry.node, "had humidity", entry.value, "at", new Date(entry.timestamp * 1000));
    * });
    * ```
    */
-  async getSnapshot(reqConfig: AnedyaGetSnapshotReq): Promise<any> {
+  async getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any> {
     return await getSnapshot(
-       this.#baseUrl,
+      this.#baseUrl,
       this.#configHeaders,
-       [this.#nodeId],
+      [this.#nodeId],
       reqConfig
-    )
+    );
   }
 }

@@ -4,11 +4,11 @@
  * and requests for the Anedya API.
  *
  */
-import { _ITimeSeriesData, _errInterface } from "./common";
+import { _ITimeSeriesData, _IError } from "./common";
 
 // ============================== Data Access ==============================
 // ------------ Get Data ------------
-export interface AnedyaGetDataReq {
+export interface IAnedyaGetDataReq {
   variable: string;
   from: number;
   to: number;
@@ -18,7 +18,7 @@ export interface AnedyaGetDataReq {
 /**
  * Request object for fetching data.
  */
-export class AnedyaGetDataRequest implements AnedyaGetDataReq {
+export class AnedyaGetDataReq implements IAnedyaGetDataReq {
   constructor(
     public variable: string,
     public from: number,
@@ -42,9 +42,9 @@ export class AnedyaGetDataRequest implements AnedyaGetDataReq {
   }
 }
 
-export interface AnedyaGetDataResp {
+export interface IAnedyaGetDataResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   isDataAvailable: boolean;
   data: _ITimeSeriesData | null;
   count: number;
@@ -54,11 +54,11 @@ export interface AnedyaGetDataResp {
 /**
  * Response object for fetching data.
  */
-export class AnedyaGetDataResponse
-  implements AnedyaGetDataResp
+export class AnedyaGetDataResp
+  implements IAnedyaGetDataResp
 {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   isDataAvailable: boolean;
   data: _ITimeSeriesData | null;
   count: number;
@@ -76,16 +76,16 @@ export class AnedyaGetDataResponse
 }
 
 // ----------------------------- Get Latest Data -------------------------------------------
-export interface AnedyaGetLatestDataResp {
+export interface IAnedyaGetLatestDataResp {
   isSuccess?: boolean;
-  error: _errInterface;
+  error: _IError;
   isDataAvailable?: boolean;
   data?: _ITimeSeriesData | null;
 }
 
-export class AnedyaGetLatestDataResponse implements AnedyaGetLatestDataResp {
+export class AnedyaGetLatestDataResp implements IAnedyaGetLatestDataResp {
   isSuccess?: boolean;
-  error: _errInterface;
+  error: _IError;
   isDataAvailable?: boolean;
   data?: _ITimeSeriesData | null;
   constructor() {
@@ -98,7 +98,7 @@ export class AnedyaGetLatestDataResponse implements AnedyaGetLatestDataResp {
 
 // ================================ Value Store ================================
 // ------------ Set Value-Store ------------
-export interface AnedyaSetKeyReq{
+export interface IAnedyaSetKeyReq{
   namespace: {
     scope: "global" | "node";
     id?: string;
@@ -108,7 +108,7 @@ export interface AnedyaSetKeyReq{
   type: "string" | "binary" | "float" | "boolean";
 }
 
-export class AnedyaSetKeyRequest implements AnedyaSetKeyReq {
+export class AnedyaSetKeyReq implements IAnedyaSetKeyReq {
   constructor(
     public namespace: {
       scope: "global" | "node";
@@ -136,14 +136,14 @@ export class AnedyaSetKeyRequest implements AnedyaSetKeyReq {
   }
 }
 
-export interface AnedyaSetKeyResp {
+export interface IAnedyaSetKeyResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
 }
 
-export class AnedyaSetKeyResponse implements AnedyaSetKeyResp {
+export class AnedyaSetKeyResp implements IAnedyaSetKeyResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   constructor() {
     this.isSuccess = false;
     this.error = { errorMessage: "", reasonCode: "" };
@@ -151,7 +151,7 @@ export class AnedyaSetKeyResponse implements AnedyaSetKeyResp {
 }
 
 // ------------ Get Value-Store ------------
-export interface AnedyaGetKeyReq {
+export interface IAnedyaGetKeyReq {
   namespace: {
     scope: "global" | "node";
     id?: string;
@@ -159,7 +159,7 @@ export interface AnedyaGetKeyReq {
   key: string;
 }
 
-export class AnedyaGetKeyRequest implements AnedyaGetKeyReq {
+export class AnedyaGetKeyReq implements IAnedyaGetKeyReq {
   constructor(
     public namespace: {
       scope: "global" | "node";
@@ -175,9 +175,9 @@ export class AnedyaGetKeyRequest implements AnedyaGetKeyReq {
   }
 }
 
-export interface AnedyaGetKeyResp {
+export interface IAnedyaGetKeyResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   namespace: {
     scope: string;
     id: string;
@@ -190,9 +190,9 @@ export interface AnedyaGetKeyResp {
   created: number;
 }
 
-export class AnedyaGetKeyResponse implements AnedyaGetKeyResp {
+export class AnedyaGetKeyResp implements IAnedyaGetKeyResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   namespace: {
     scope: string;
     id: string;
@@ -218,7 +218,7 @@ export class AnedyaGetKeyResponse implements AnedyaGetKeyResp {
 
 // ------------ Delete Value-Store ------------
 
-export interface AnedyaDeleteKeyReq {
+export interface IAnedyaDeleteKeyReq {
   namespace: {
     scope: "global" | "node";
     id?: string;
@@ -226,7 +226,9 @@ export interface AnedyaDeleteKeyReq {
   key: string;
 }
 
-export class AnedyaDeleteKeyRequest implements AnedyaDeleteKeyReq {
+IAnedyaDeleteKeyReq
+
+export class AnedyaDeleteKeyReq implements IAnedyaDeleteKeyReq {
   constructor(
     public namespace: {
       scope: "global" | "node";
@@ -242,14 +244,14 @@ export class AnedyaDeleteKeyRequest implements AnedyaDeleteKeyReq {
   }
 }
 
-export interface AnedyaDeleteKeyResp {
+export interface IAnedyaDeleteKeyResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
 }
 
-export class AnedyaDeleteKeyResponse implements AnedyaDeleteKeyResp{
+export class AnedyaDeleteKeyResp implements IAnedyaDeleteKeyResp{
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   constructor() {
     this.isSuccess = false;
     this.error = { errorMessage: "", reasonCode: "" };
@@ -258,7 +260,7 @@ export class AnedyaDeleteKeyResponse implements AnedyaDeleteKeyResp{
 
 // ---------------- Value Store Scan ----------------
 
-export interface AnedyaScanKeysReq {
+export interface IAnedyaScanKeysReq {
   filter: {
     namespace: {
       scope: "global" | "node";
@@ -271,8 +273,8 @@ export interface AnedyaScanKeysReq {
   offset: number;
 }
 
-export class AnedyaScanKeysRequest
-  implements AnedyaScanKeysReq
+export class AnedyaScanKeysReq
+  implements IAnedyaScanKeysReq
 {
   constructor(
     public filter: {
@@ -297,20 +299,20 @@ export class AnedyaScanKeysRequest
   }
 }
 
-export interface AnedyaScanKeysResp {
+export interface IAnedyaScanKeysResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   count: number;
   totalCount: number;
   data: any;
   next: number;
 }
 
-export class AnedyaScanKeysResponse
-  implements AnedyaScanKeysResp
+export class AnedyaScanKeysResp
+  implements IAnedyaScanKeysResp
 {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   count: number;
   totalCount: number;
   data: any;
@@ -327,17 +329,17 @@ export class AnedyaScanKeysResponse
 
 // ---------------- Device Status ----------------
 
-export interface AnedyaGetDeviceStatusResp {
+export interface IAnedyaGetDeviceStatusResp {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   data: any;
 }
 
-export class AnedyaGetDeviceStatusResponse
-  implements AnedyaGetDeviceStatusResp
+export class AnedyaGetDeviceStatusResp
+  implements IAnedyaGetDeviceStatusResp
 {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   data: any;
   constructor() {
     this.isSuccess = false;
@@ -347,12 +349,12 @@ export class AnedyaGetDeviceStatusResponse
 }
 
 // ---------------- Get Snapshot----------------
-export interface AnedyaGetSnapshotReq {
+export interface IAnedyaGetSnapshotReq {
   time: number;
   variable: string;
 }
 
-export class AnedyaGetSnapshotRequest implements AnedyaGetSnapshotReq {
+export class AnedyaGetSnapshotReq implements IAnedyaGetSnapshotReq {
   constructor(
     public time: number,
     public variable: string,
@@ -383,18 +385,18 @@ export interface NodeVariableValue {
 
 export type NodeVariableValues = NodeVariableValue[];
 
-export interface AnedyaGetSnapshotResp {
+export interface IAnedyaGetSnapshotResp {
   isSuccess: boolean;
-    error: _errInterface;
+    error: _IError;
   count: number;
   data: NodeVariableValues;
 }
 
-export class AnedyaGetSnapshotResponse
-  implements AnedyaGetSnapshotResp
+export class AnedyaGetSnapshotResp
+  implements IAnedyaGetSnapshotResp
 {
   isSuccess: boolean;
-  error: _errInterface;
+  error: _IError;
   count: number;
   data: NodeVariableValues;
   constructor() {
