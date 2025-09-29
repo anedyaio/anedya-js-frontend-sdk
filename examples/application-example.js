@@ -56,7 +56,7 @@ async function getData() {
       if (res.isDataAvailable) {
         console.log("Data:", res.data);
       } else {
-        console.log("No data available in Reqed timestamp!!");
+        console.log("No data available in Requested timestamp!!");
       }
     } else {
       console.error("Error fetching data:", res.error.errorMessage);
