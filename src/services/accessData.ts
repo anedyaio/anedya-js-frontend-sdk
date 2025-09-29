@@ -1,18 +1,29 @@
-/*
- Access Data from the Anedya platform side api.
-*/
+/**
+ *  Access Data from the Anedya platform side api.
+ *
+ * Provides functions to fetch historical and latest time-series data
+ * from the Anedya platform API. These functions handle request signing,
+ * header construction, error handling, and response normalization.
+ */
+
 import {
-  AnedyaGetDataBetweenReqInterface,
-  AnedyaGetDataBetweenRespInterface,
-  AnedyaGetDataBetweenResponse,
-  AnedyaLatestDataRespInterface,
-  AnedyaLatestDataResponse,
+  AnedyaGetDataReq,
+  AnedyaGetDataResp,
+  AnedyaGetDataResponse,
+  AnedyaGetLatestDataResp,
+  AnedyaGetLatestDataResponse,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders, _ITimeSeriesData } from "../common";
 
 // ------------------------------ Get Data -----------------------------
-interface _AnedyaGetDataRespInterface {
+
+/**
+ * Internal interface for the raw response structure of the `getData` API.
+ * This matches the Anedya backend format before mapping into SDK response objects.
+ */
+
+interface _AnedyaGetDataResp {
   success: boolean;
   data: _ITimeSeriesData | null;
   errorcode: number;
@@ -23,14 +34,34 @@ interface _AnedyaGetDataRespInterface {
   endTime: number;
 }
 
+/**
+ * Fetch time-series data for a given node and variable from the Anedya platform.
+ *
+ * @param baseUrl - Base URL of the Anedya API endpoint.
+ * @param configHeaders - Authentication + signature headers configuration.
+ * @param nodes - Array of node IDs to fetch data for.
+ * @param accessDataReq - Request parameters (variable name, time range, limit, order).
+ * @returns Promise resolving to a structured response object.
+ *
+ * @example
+ * ```ts
+ * const req = new AnedyaGetDataRequest("temperature", from, to, 100);
+ * const res = await getData(baseUrl, headers, ["node123"], req);
+ * if (res.isSuccess && res.isDataAvailable) {
+ *   console.log(res.data);
+ * }
+ * ```
+ */
+
 export const getData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: AnedyaGetDataBetweenReqInterface
+  accessDataReq: AnedyaGetDataReq
 ): Promise<any> => {
   const url = `${baseUrl}/data/getData`;
 
+  // Request payload expected by Anedya backend
   const requestData = {
     nodes: nodes,
     variable: accessDataReq.variable,
@@ -39,6 +70,8 @@ export const getData = async (
     limit: accessDataReq.limit,
     order: accessDataReq.order,
   };
+
+  // Generate request signature for secure communication
   const currentTime = Math.floor(Date.now() / 1000);
   const combinedHash = await anedyaSignature(
     requestData,
@@ -47,6 +80,7 @@ export const getData = async (
   );
 
   try {
+    // Required request headers for authentication & integrity
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -55,23 +89,26 @@ export const getData = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
+    // Perform the request
     const response = await fetch(url, {
       method: "POST",
       credentials: "same-origin",
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetDataBetweenRespInterface = new AnedyaGetDataBetweenResponse();
+    // Initialize SDK response object
+    let res: AnedyaGetDataResp =
+      new AnedyaGetDataResponse();
     try {
-      let responseData: _AnedyaGetDataRespInterface = await response.json();
+      // Parse raw backend response
+      let responseData: _AnedyaGetDataResp = await response.json();
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;
       res.isDataAvailable = false;
       res.data = null;
-
+      // Map backend response into SDK response structure
       if (responseData.success) {
         let data: any = responseData.data;
         if (
@@ -94,6 +131,7 @@ export const getData = async (
       res.endTime = responseData.endTime;
       return res;
     } catch (error) {
+      // Handle malformed JSON or parsing issues
       res.isSuccess = false;
       res.error.reasonCode = response.status.toString();
       res.error.errorMessage = response.statusText;
@@ -106,7 +144,11 @@ export const getData = async (
 };
 
 // ------------------------------ Get Latest Data -----------------------------
-interface _AnedyaGetLatestDataRespInterface {
+
+/**
+ * Internal interface for the raw response structure of the `latest` API.
+ */
+interface _AnedyaGetLatestDataResp {
   success: boolean;
   data: _ITimeSeriesData | null;
   errorcode: number;
@@ -114,6 +156,25 @@ interface _AnedyaGetLatestDataRespInterface {
   reasonCode: string;
   count: number;
 }
+
+/**
+ * Fetch the most recent data point for a given node and variable.
+ *
+ * @param baseUrl - Base URL of the Anedya API endpoint.
+ * @param configHeaders - Authentication + signature headers configuration.
+ * @param nodes - Array of node IDs to fetch latest data for.
+ * @param accessDataReq - Request parameters (contains variable identifier).
+ * @returns Promise resolving to a structured response object.
+ *
+ * @example
+ * ```ts
+ * const req = { variable: "temperature" };
+ * const res = await fetchLatestData(baseUrl, headers, ["node123"], req);
+ * if (res.isSuccess && res.isDataAvailable) {
+ *   console.log("Latest Data:", res.data);
+ * }
+ * ```
+ */
 
 export const fetchLatestData = async (
   baseUrl: string,
@@ -123,11 +184,12 @@ export const fetchLatestData = async (
 ): Promise<any> => {
   const url = `${baseUrl}/data/latest`;
 
+  // Request payload for latest data
   const requestData = {
     nodes: nodes,
     variable: accessDataReq.variable,
   };
-  const currentTime = Math.floor(Date.now() / 1000); // time in sec
+  const currentTime = Math.floor(Date.now() / 1000); // time in seconds
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
@@ -149,15 +211,16 @@ export const fetchLatestData = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaLatestDataRespInterface = new AnedyaLatestDataResponse();
+    let res: AnedyaGetLatestDataResp = new AnedyaGetLatestDataResponse();
     try {
-      const responseData: _AnedyaGetLatestDataRespInterface =
+      const responseData: _AnedyaGetLatestDataResp =
         await response.json();
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;
       res.isDataAvailable = false;
       res.data = null;
+              // Map latest data into SDK response
       if (responseData.success) {
         let data: any = responseData.data;
         if (

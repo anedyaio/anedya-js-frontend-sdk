@@ -2,30 +2,35 @@ import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
 import {
-  AnedyaGetDeviceStatusResp,
-  AnedyaGetDeviceStatusResponse,
+  AnedyaGetSnapshotReq,
+  AnedyaGetSnapshotResp,
+  AnedyaGetSnapshotResponse,
+  NodeVariableValue,
+  NodeVariableValues,
 } from "../models";
 
 // ------------------------ Device Status -------------------------
-interface _AnedyaGetDeviceStatusResp {
+interface _AnedyaGetSnapshotResp {
   success: boolean;
-  errcode: number;
   error: string;
+  errorcode: number;
   reasonCode: string;
-  data: any;
+  count: number;
+  data: NodeVariableValues;
 }
 
-export const getDeviceStatus = async (
+export const getSnapshot = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  lastContactThreshold: number
+  getSnapshotReq: AnedyaGetSnapshotReq
 ): Promise<any> => {
-  const url = `${baseUrl}/health/status`;
+  const url = `${baseUrl}/data/snapshot`;
 
   const requestData = {
     nodes: nodes,
-    lastContactThreshold: lastContactThreshold,
+    time: getSnapshotReq?.time,
+    variable: getSnapshotReq?.variable,
   };
   const currentTime = Math.floor(Date.now() / 1000);
   const combinedHash = await anedyaSignature(
@@ -50,9 +55,9 @@ export const getDeviceStatus = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: AnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResponse();
+    let res: AnedyaGetSnapshotResp = new AnedyaGetSnapshotResponse();
     try {
-      const responseData: _AnedyaGetDeviceStatusResp =
+      const responseData: _AnedyaGetSnapshotResp =
         await response.json();
       // console.log(responseData);
       res.isSuccess = responseData.success;
@@ -61,11 +66,17 @@ export const getDeviceStatus = async (
       if (!res.isSuccess) {
         return res;
       }
+
+      // If only one node was requested → filter array for that node
       if (nodes.length === 1) {
-        res.data = responseData.data[nodes[0]];
+        res.data = responseData.data.filter(
+          (item: NodeVariableValue) => item.node === nodes[0]
+        );
       } else {
+        // If multiple nodes → just return the full array
         res.data = responseData.data;
       }
+      res.count = responseData.count; // keep count in sync
       return res;
     } catch (error) {
       res.isSuccess = false;
@@ -78,3 +89,8 @@ export const getDeviceStatus = async (
     throw error;
   }
 };
+
+//checks if it works in js
+//add req, comments for req
+//enums
+//remove anedya from names

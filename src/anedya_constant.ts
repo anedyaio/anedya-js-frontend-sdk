@@ -1,12 +1,11 @@
-
-export const AnedyaScope= {
-  GLOBAL: "global",
-  NODE : "node",
-}as const;
+export enum AnedyaScope {
+  GLOBAL = "global",
+  NODE = "node",
+}
 
 export enum AnedyaDataType {
   STRING = "string",
   BINARY = "binary",
   FLOAT = "float",
-  BOOLEAN = "boolean"
+  BOOLEAN = "boolean",
 }
