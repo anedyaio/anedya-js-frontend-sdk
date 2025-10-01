@@ -15,9 +15,9 @@ const {
   AnedyaGetKeyResp,
   AnedyaDeleteKeyResp,
   AnedyaGetDeviceStatusResp,
-} = require("@anedyaio/anedya-js-frontend-sdk");
+} = require("@anedyasystems/anedya-frontend-sdk");
 
-// Configuration Constants
+// Your Anedya credentials
 const tokenId = "";
 const token = "";
 const NodeId = "";
