@@ -1,0 +1,8 @@
+node_modules/
+tests/
+development/
+previous/
+.vscode/
+
+dist/
+postman/
