@@ -21,6 +21,8 @@ import {
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
 import { getSnapshot } from "./services/snapShot";
+import { AnedyaStream } from "./stream";
+
 
 /**
  * INode defines the contract for interacting with a node in Anedya.
@@ -57,6 +59,9 @@ export interface INode {
    * Returns nearest datapoint submitted before specified time incase no datapoints found at the exact timestamp.
    */
   getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any>;
+
+  /** Get a live data stream for this node */
+getStream(streamId: string, streamUrl: string): AnedyaStream
 }
 
 /**
@@ -138,7 +143,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -164,7 +169,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -207,7 +212,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -240,7 +245,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -273,7 +278,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -309,7 +314,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -353,7 +358,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      lastContactThreshold
+      lastContactThreshold,
     );
   }
 
@@ -403,7 +408,22 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
+
+   getStream(streamId: string, streamUrl: string): AnedyaStream { //user will have to connect on their own (call stream.connect())
+  return new AnedyaStream( 
+    streamUrl,
+    this.#configHeaders,
+    streamId
+  );
+}
+connectStream(streamId: string, streamUrl: string): AnedyaStream { //connects by itself
+  const stream = this.getStream(streamId, streamUrl);
+  stream.connect();
+  return stream;
+}
+
+
 }

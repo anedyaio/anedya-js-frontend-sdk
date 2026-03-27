@@ -403,3 +403,4 @@ export class AnedyaGetSnapshotResp
     this.data = []; 
   }
 }
+

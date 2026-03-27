@@ -18,10 +18,13 @@ const {
 } = require("@anedyasystems/anedya-frontend-sdk");
 
 // Your Anedya credentials
-const tokenId = "";
-const token = "";
-const NodeId = "";
-const variableIdentifier = "";
+const tokenId = "itATCNCVamYNmwfdeBumQMwS";
+const token = "Evd8wL35Xt4tNQOXP11YddiRHtM74jqw3JZYuIaPmnWxNozbmnNTUfVaqXmQERV1";
+const NodeId = "20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb";
+const variableIdentifier = "temperature";
+const streamId="019d28ae-fb49-7f41-8307-f88a1b29505e"
+const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+
 
 // Initialize Anedya Client
 const anedya = new Anedya();
@@ -187,17 +190,42 @@ async function getSnapshot() {
   } catch (error) {
     console.error("Error getting Snapshot:", error);
   }
+
 }
+
+
+async function testStream() {
+  try {
+
+    const stream = node_1.connectStream(streamId, streamUrl);
+
+    // Attach listeners BEFORE connecting
+    stream.onData((data) => {
+      console.log("📡 STREAM DATA:", data);
+    });
+
+    stream.onError((err) => {
+      console.error("❌ STREAM ERROR:", err);
+    });
+
+    await stream.connect();
+
+    console.log("🚀 Stream connection initiated");
+  } catch (error) {
+    console.error("Error in stream:", error);
+  }
+}
+
 
 // Execute functions
 (async () => {
-  await getNodeId();
-  await getData();
-  await getLatestData();
-  await setKey();
-  await getKey();
-  await deleteKey();
-  await scanKeys();
-  await getDeviceStatus();
-  // await getSnapshot();
+  // await getNodeId();
+  // await getData();
+  // await getLatestData();
+  // await setKey();
+  // await getKey();
+  // await deleteKey();
+  // await scanKeys();
+  // await getDeviceStatus();
+await testStream()
 })();

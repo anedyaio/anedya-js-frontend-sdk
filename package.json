@@ -26,9 +26,12 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "test": "node tests/test.mjs"
+    "test": "node tests/test.mjs",
+    "start":"node examples/application-example.js"
   },
   "devDependencies": {
+    "@types/cbor": "^5.0.1",
+    "@types/ws": "^8.18.1",
     "tsup": "^8.5.0",
     "typescript": "^5.7.3"
   },
@@ -44,5 +47,9 @@
     "device-management",
     "API",
     "browser"
-  ]
+  ],
+  "dependencies": {
+    "cbor": "^10.0.12",
+    "ws": "^8.20.0"
+  }
 }
