@@ -144,11 +144,9 @@ export class AnedyaStream {
 
 private handleVariableData(payload: Buffer) {
   try {
-    console.log(payload.toString("hex"));
-
     const decodedItems = cbor.decodeAllSync(payload);
 
-    console.log("Decoded Items:", decodedItems);
+    // console.log("Decoded Items:", decodedItems);
 
     const decoded: any = {};
 

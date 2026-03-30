@@ -18,11 +18,11 @@ const {
 } = require("@anedyasystems/anedya-frontend-sdk");
 
 // Your Anedya credentials
-const tokenId = "iG91tS7YJ1h3NPU9gepjVrL8";
-const token = "7cLzCk3OVcDtVlCJbOBX4DyLWr67ny5ocVv528U2yoK6tenJXiudUJrfhbo1NDnh";
+const tokenId = "lsWa9iOl1XWW2ACpvI9Nlx3w";
+const token = "gP6iJf4hcUmoi24lyjLsaIxRw4UuF7wEGah9Fa1qOCnaNjvhohoYvNDf13AU25d1";
 const NodeId = "20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb";
 const variableIdentifier = "temperature";
-const streamId="019d2e20-655c-74af-ada3-8d4bba3a3305"
+const streamId="019d3dbe-f14f-7365-b339-bcefbcc848a0"
 const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 
 
@@ -197,7 +197,7 @@ async function getSnapshot() {
 async function testStream() {
   try {
 
-    const stream = node_1.connectStream(streamId, streamUrl);
+    const stream = node_1.getStream(streamId, streamUrl);
 
     // Attach listeners BEFORE connecting
     stream.onData((data) => {
