@@ -70,7 +70,9 @@ interface EventSub {
  *
  * Usage:
  * ```ts
- * const stream = new AnedyaStreamClient(streamUrl, configHeaders, streamId);
+ * const client = anedya.NewClient(connect_config);
+ * const node = anedya.NewNode(client, nodeId);
+ * const stream = new AnedyaStreamClient(client, node, streamId, streamUrl);
  *
  * const sub = stream.onVariable("temperature", (data) => {
  *   console.log(data.value);
@@ -86,7 +88,7 @@ interface EventSub {
  * ```
  */
 export class AnedyaStreamClient {
-      readonly node: NewNode;                    // public — accessible inside callbacks
+  readonly node: NewNode;                    // public — accessible inside callbacks
   private readonly streamUrl: string;
   private readonly configHeaders: IConfigHeaders;
   private readonly streamId: string;
@@ -104,7 +106,7 @@ export class AnedyaStreamClient {
   private errorListeners: ErrorCallback[] = [];
   private statusListeners: StatusCallback[] = [];
 
- 
+
   constructor(
     client: NewClient,
     node: NewNode,
@@ -140,14 +142,16 @@ export class AnedyaStreamClient {
     const currentTime = Math.floor(Date.now() / 1000);
     const signature = await anedyaSignature(null, this.configHeaders, currentTime);
 
-    // Browser WebSocket doesn't support custom headers — pass as query params
+    // Browser WebSocket doesn't support custom headers — pass as query params.
+    // ✅ FIX: Authorization scheme must be the literal "ANEDYASIGV1", not authorizationMode ("token")
+    // ✅ FIX: signatureversion must be the literal string "v1", not signatureVersion ("1")
     const url = new URL(this.streamUrl);
+    url.searchParams.set("Authorization", "ANEDYASIGV1");
     url.searchParams.set("x-anedya-streamid", this.streamId);
     url.searchParams.set("x-anedya-tokenid", this.configHeaders.tokenId);
     url.searchParams.set("x-anedya-signature", signature);
     url.searchParams.set("x-anedya-timestamp", currentTime.toString());
-    url.searchParams.set("x-anedya-signatureversion", this.configHeaders.signatureVersion);
-    url.searchParams.set("Authorization", this.configHeaders.authorizationMode);
+    url.searchParams.set("x-anedya-signatureversion", "v1");
 
     this.ws = new WebSocket(url.toString());
     this.ws.binaryType = "arraybuffer"; // ✅ guarantees ArrayBuffer in browser — no Buffer needed
