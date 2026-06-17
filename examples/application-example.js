@@ -15,22 +15,30 @@ const {
   AnedyaGetKeyResp,
   AnedyaDeleteKeyResp,
   AnedyaGetDeviceStatusResp,
+    AnedyaStreamClient, 
 } = require("@anedyasystems/anedya-frontend-sdk");
 
 // Your Anedya credentials
-const tokenId = "lsWa9iOl1XWW2ACpvI9Nlx3w";
-const token = "gP6iJf4hcUmoi24lyjLsaIxRw4UuF7wEGah9Fa1qOCnaNjvhohoYvNDf13AU25d1";
-const NodeId = "20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb";
-const variableIdentifier = "temperature";
-const streamId="019d3dbe-f14f-7365-b339-bcefbcc848a0"
-const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+// const tokenId = "lsWa9iOl1XWW2ACpvI9Nlx3w";
+// const token = "gP6iJf4hcUmoi24lyjLsaIxRw4UuF7wEGah9Fa1qOCnaNjvhohoYvNDf13AU25d1";
+// const NodeId = "20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb";
+// const variableIdentifier = "temperature";
+// const streamId="019d3dbe-f14f-7365-b339-bcefbcc848a0"
+// const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 
+const streamId="019ed381-8fd6-706e-8d7b-a0e93312c865"
+const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+const tokenId="1LoygvNpcfieJOhsKiKkmPaV"
+const token="uardIpoF2nIDEa0SB1Uoeii51Jgt8WOqFUt5vnNlESmIUEj1mYEOBTyamC08VmuX"
+const variableIdentifier="stream-test"
+const nodeId="019ed37e-c9f9-7c0a-a20e-c24520e5d41f"
 
 // Initialize Anedya Client
 const anedya = new Anedya();
 const connect_config = anedya.NewConfig(tokenId, token);
 const client = anedya.NewClient(connect_config);
 const node_1 = anedya.NewNode(client, NodeId);
+const stream = new AnedyaStreamClient(client, node_1, streamId, streamUrl);
 
 // Example function to get Node ID
 async function getNodeId() {
@@ -195,27 +203,34 @@ async function getSnapshot() {
 
 
 async function testStream() {
-  try {
+  // stream is created at the top of the file
 
-    const stream = node_1.getStream(streamId, streamUrl);
+  stream.onStatus((status) => console.log("🔌 Status:", status));
+  stream.onError((err) => console.error("Error:", err));
 
-    // Attach listeners BEFORE connecting
-    stream.onData((data) => {
-      console.log("📡 STREAM DATA:", data);
-    });
+  const tempSub = stream.onVariable("temperature", (data) => {
+    console.log("🌡️ Temp:", data.value, "@", data.timestamp);
+    if (data.value > 80) {
+      tempSub.pause();
+      setTimeout(() => tempSub.resume(), 10_000);
+    }
+  });
 
-    stream.onError((err) => {
-      console.error("❌ STREAM ERROR:", err);
-    });
+  const thresholdSub = stream.onValueStore("threshold", (data) => {
+    console.log("🗄️ New threshold:", data.value);
+    thresholdSub.cancel();
+  });
 
-    await stream.connect();
+  const eventSub = stream.onEvent((data) => {
+    console.log("📡 Event:", data.variable, data.value);
+  });
 
-    console.log("🚀 Stream connection initiated");
-  } catch (error) {
-    console.error("Error in stream:", error);
-  }
+  await stream.connect();
+
+  setTimeout(() => { stream.pause(); console.log("⏸️ Global pause"); }, 30_000);
+  setTimeout(() => { stream.resume(); console.log("▶️ Resumed"); }, 40_000);
+  setTimeout(() => stream.disconnect(), 60_000);
 }
-
 
 // Execute functions
 (async () => {
@@ -227,5 +242,5 @@ async function testStream() {
   // await deleteKey();
   // await scanKeys();
   // await getDeviceStatus();
-await testStream()
+ await testStream();
 })();

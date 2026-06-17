@@ -27,7 +27,7 @@
     "build": "tsup",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
     "test": "node tests/test.mjs",
-    "start":"node examples/application-example.js"
+    "start": "node examples/application-example.js"
   },
   "devDependencies": {
     "@types/cbor": "^5.0.1",
@@ -50,6 +50,7 @@
   ],
   "dependencies": {
     "cbor": "^10.0.12",
+    "cbor-x": "^1.6.4",
     "ws": "^8.20.0"
   }
 }

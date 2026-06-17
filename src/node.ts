@@ -21,7 +21,6 @@ import {
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
 import { getSnapshot } from "./services/snapShot";
-import { AnedyaStream } from "./stream";
 
 
 /**
@@ -60,8 +59,7 @@ export interface INode {
    */
   getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any>;
 
-  /** Get a live data stream for this node */
-getStream(streamId: string, streamUrl: string): AnedyaStream
+
 }
 
 /**
@@ -412,18 +410,6 @@ export class NewNode implements INode {
     );
   }
 
-   getStream(streamId: string, streamUrl: string): AnedyaStream { //user will have to connect on their own (call stream.connect())
-  return new AnedyaStream( 
-    streamUrl,
-    this.#configHeaders,
-    streamId
-  );
-}
-connectStream(streamId: string, streamUrl: string): AnedyaStream { //connects by itself
-  const stream = this.getStream(streamId, streamUrl);
-  stream.connect();
-  return stream;
-}
 
 
 }
