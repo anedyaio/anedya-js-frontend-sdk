@@ -255,6 +255,20 @@
 
   /* ── empty state ── */
   .empty-subs { text-align: center; color: var(--text-tertiary); font-size: 12px; padding: 1.5rem 0; }
+
+  /* ── provision banner ── */
+  .provision-banner {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; border-radius: var(--radius-sm);
+    font-size: 12px; font-weight: 500; margin-bottom: 14px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.02); color: var(--text-secondary);
+  }
+  .provision-banner.loading { border-color: rgba(79,142,247,0.3); background: rgba(79,142,247,0.06); color: var(--blue-light); }
+  .provision-banner.success { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); color: var(--success); }
+  .provision-banner.error   { border-color: rgba(248,113,113,0.3); background: rgba(248,113,113,0.06); color: var(--danger); }
+  .spin { display: inline-block; animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -278,26 +292,26 @@
   <!-- connection config -->
   <div class="section card">
     <div class="card-title"><i class="ti ti-plug" aria-hidden="true"></i>Connection</div>
+    <div class="provision-banner loading" id="provision-banner">
+      <i class="ti ti-loader spin" aria-hidden="true"></i>
+      <span id="provision-text">Provisioning node, stream and access token…</span>
+    </div>
     <div class="grid-2" style="margin-bottom:14px">
       <div class="field">
         <div class="field-label">Stream URL</div>
-        <input type="text" id="inp-url" placeholder="wss://…" value="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect" />
+        <input type="text" id="inp-url" placeholder="wss://…" value="wss://zxbpervpcj.acs-r1.ap-in-1.anedya.io/v1/streams/connect" />
       </div>
       <div class="field">
         <div class="field-label">Stream ID</div>
-        <input type="text" id="inp-sid" placeholder="UUID" value="019d3dbe-f14f-7365-b339-bcefbcc848a0" />
+        <input type="text" id="inp-sid" placeholder="UUID" value="019ed492-4675-7b20-b852-d882a4d9f89f" />
       </div>
       <div class="field" style="margin-bottom:0">
         <div class="field-label">Token ID</div>
-        <input type="text" id="inp-tid" placeholder="Token ID" value="lsWa9iOl1XWW2ACpvI9Nlx3w" />
+        <input type="text" id="inp-tid" placeholder="Token ID" value="MGQkqOemUfrM1x7NwKx7bYhg" />
       </div>
       <div class="field" style="margin-bottom:0">
         <div class="field-label">Token</div>
         <input type="text" id="inp-tok" placeholder="Paste token…" />
-      </div>
-      <div class="field" style="margin-bottom:0">
-        <div class="field-label">Node ID</div>
-        <input type="text" id="inp-nid" placeholder="UUID" value="20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb" />
       </div>
     </div>
     <div class="row">
@@ -510,27 +524,115 @@ function incSubCount(id) {
   el.textContent = parseInt(el.textContent || '0') + 1;
 }
 
+/* ── provisioning ── */
+const API_KEY = "399eb9f86e5b6c0ee0de5f03b9bf2ed294db4eb756c557073d532135c5683929";
+
+function setProvisionBanner(state, text) {
+  const banner = document.getElementById('provision-banner');
+  const span   = document.getElementById('provision-text');
+  banner.className = 'provision-banner ' + state;
+  const icons = { loading: 'ti-loader spin', success: 'ti-circle-check', error: 'ti-alert-circle' };
+  banner.querySelector('i').className = 'ti ' + (icons[state] || 'ti-info-circle') + (state === 'loading' ? '' : '');
+  span.textContent = text;
+}
+
+async function provisionAndFill() {
+  try {
+    // 1. Create node
+    setProvisionBanner('loading', 'Creating node…');
+    const nodeResp = await fetch('https://api.anedya.io/v1/node/create', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        node_name: 'Stream Test Node',
+        node_desc: 'Auto-provisioned by stream tester.',
+        tags: [{ key: 'source', value: 'stream-tester' }],
+        preAuthorize: false,
+      })
+    });
+    const nodeInfo = await nodeResp.json();
+    if (!nodeInfo.nodeId) throw new Error(nodeInfo.message || 'Node creation failed');
+    const nodeId = nodeInfo.nodeId;
+
+    // 2. Create stream
+    setProvisionBanner('loading', 'Creating stream…');
+    const streamResp = await fetch('https://api.anedya.io/v1/streams/create', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sources: { nodes: [nodeId] },
+        events: ['valuestore::updates', 'valuestore::delete', 'events::nodeevents'],
+        variables: ['temperature', 'humidity', 'pressure'],
+        expiry: 86400,
+      })
+    });
+    const streamInfo = await streamResp.json();
+    if (!streamInfo.streamId) throw new Error(streamInfo.message || 'Stream creation failed');
+
+    // 3. Create access token
+    setProvisionBanner('loading', 'Creating access token…');
+    const tokenResp = await fetch('https://api.anedya.io/v1/access/tokens/create', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ttlSec: 2629746,
+        policy: {
+          resources: {
+            nodes: [nodeId],
+            variables: ['*'],
+            vsglobalscopes: ['*'],
+            vskeys: ['*'],
+            streams: [streamInfo.streamId],
+          },
+          allow: [
+            'data::getsnapshot', 'data::getlatest', 'data::gethistorical',
+            'cmd::sendcommand', 'cmd::listcommands', 'cmd::getstatus',
+            'cmd::invalidate', 'vs::getvalue', 'vs::setvalue',
+            'vs::scankeys', 'vs::deletekeys', 'streams::connect',
+            'health::gethbstats', 'health::getstatus',
+          ],
+        },
+      })
+    });
+    const tokenInfo = await tokenResp.json();
+    if (!tokenInfo.tokenId) throw new Error(tokenInfo.message || 'Token creation failed');
+
+    // 4. Autofill fields
+    document.getElementById('inp-url').value = streamInfo.streamURL;
+    document.getElementById('inp-sid').value = streamInfo.streamId;
+    document.getElementById('inp-tid').value = tokenInfo.tokenId;
+    document.getElementById('inp-tok').value = tokenInfo.token;
+
+    setProvisionBanner('success', `Provisioned — node ${nodeId.slice(0, 8)}… · stream ${streamInfo.streamId.slice(0, 8)}… · token ready. Click Connect when ready.`);
+  } catch (err) {
+    setProvisionBanner('error', 'Provisioning failed: ' + err.message);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', provisionAndFill);
+
 /* ── stream factory ── */
 function makeStream() {
   const url = document.getElementById('inp-url').value.trim();
   const sid = document.getElementById('inp-sid').value.trim();
   const tid = document.getElementById('inp-tid').value.trim();
-  const nid = document.getElementById('inp-nid').value.trim();
-  if (!url || !sid || !tid || !nid) { log('Stream URL, Stream ID, Token ID, and Node ID are required', 'error'); return null; }
+  const tok = document.getElementById('inp-tok').value.trim(); // FIX 1: read the token from the input
+  if (!url || !sid || !tid || !tok) { log('Stream URL, Stream ID, Token ID, and Token are required', 'error'); return null; }
 
   return {
-    _url: url, _sid: sid, _tid: tid, _nid: nid,
+    _url: url, _sid: sid, _tid: tid, _tok: tok, // FIX 2: store _tok on the object
     _ws: null, _connected: false, _destroyed: false, _reconnects: 0,
     _globalPaused: false,
     _varSubs: [], _vsSubs: [], _evSubs: [],
 
     async _generateSignature(timestamp) {
+      const encoder = new TextEncoder();
       const bodyHash = await crypto.subtle.digest('SHA-256', new Uint8Array());
       const bodyHashBytes = new Uint8Array(bodyHash);
       const timeBytes = new Uint8Array(8);
       new DataView(timeBytes.buffer).setBigUint64(0, BigInt(timestamp), false);
-      const sigVersionBytes = new Uint8Array([0x01]);
-      const tokenBytes = new TextEncoder().encode(this._tok);
+      const sigVersionBytes = encoder.encode("v1"); // FIX 3: encode the string "v1", not the raw byte 0x01
+      const tokenBytes = encoder.encode(this._tok);
       const combined = new Uint8Array(
         bodyHashBytes.length + timeBytes.length + sigVersionBytes.length + tokenBytes.length
       );
@@ -548,16 +650,13 @@ function makeStream() {
       if (this._connected || this._destroyed) return;
       const t = Math.floor(Date.now() / 1000);
       const sig = await this._generateSignature(t);
-      console.log('signature:', sig); 
-console.log('token:', this._tok);
       const wsUrl = new URL(this._url);
-   wsUrl.searchParams.set('x-anedya-streamid', this._sid);
-wsUrl.searchParams.set('x-anedya-tokenid', this._tid);
-wsUrl.searchParams.set('x-anedya-nodeid', this._nid);
+      wsUrl.searchParams.set('Authorization', 'ANEDYASIGV1');             // FIX 4: correct auth scheme
+      wsUrl.searchParams.set('x-anedya-streamid', this._sid);
+      wsUrl.searchParams.set('x-anedya-tokenid', this._tid);
       wsUrl.searchParams.set('x-anedya-signature', sig);
       wsUrl.searchParams.set('x-anedya-timestamp', t.toString());
-      wsUrl.searchParams.set('x-anedya-signatureversion', '1');
-      wsUrl.searchParams.set('Authorization', 'token');
+      wsUrl.searchParams.set('x-anedya-signatureversion', 'v1');          // FIX 4: "v1" not "1"
       this._ws = new WebSocket(wsUrl.toString());
       this._ws.binaryType = 'arraybuffer';
       this._ws.onopen = () => {
