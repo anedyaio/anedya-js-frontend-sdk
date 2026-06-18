@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Anedya Stream Demo</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0e1a; --bg-card: #13152b;
+  --border: rgba(120,100,255,0.15); --border-hover: rgba(120,100,255,0.35);
+  --purple: #7c5cfc; --purple-light: #a98bff;
+  --blue: #4f8ef7; --blue-light: #82b4ff; --teal: #2dd4bf;
+  --accent-grad: linear-gradient(135deg,#7c5cfc,#4f8ef7);
+  --text-primary: #eeeaf8; --text-secondary: #9b93c0; --text-tertiary: #5c5480;
+  --success: #34d399; --warning: #fbbf24; --danger: #f87171;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px;
+  --font: 'Inter', system-ui, sans-serif;
+  --mono: 'JetBrains Mono','Fira Mono',monospace;
+}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+body { font-family: var(--font); background: var(--bg); color: var(--text-primary); min-height: 100vh; }
+
+/* header */
+.header {
+  background: linear-gradient(135deg,#0f1030,#1a0f3a,#0a1628);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem; display: flex; align-items: center; gap: 14px;
+  position: sticky; top: 0; z-index: 10;
+}
+.logo { width: 34px; height: 34px; background: var(--accent-grad); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; color: #fff; }
+.header-title { font-size: 15px; font-weight: 600; }
+.header-sub { font-size: 11px; color: var(--text-secondary); }
+.hspacer { flex: 1; }
+.badge-pill {
+  display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500;
+  padding: 5px 12px; border-radius: 99px; border: 1px solid var(--border);
+  color: var(--text-secondary); background: rgba(255,255,255,0.03); transition: all .2s;
+}
+.badge-pill.connected { border-color: rgba(52,211,153,.4); color: var(--success); background: rgba(52,211,153,.08); }
+.badge-pill.reconnecting { border-color: rgba(251,191,36,.4); color: var(--warning); background: rgba(251,191,36,.08); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-tertiary); flex-shrink: 0; }
+.dot.on { background: var(--success); box-shadow: 0 0 6px var(--success); animation: pulse 2s infinite; }
+.dot.blink { background: var(--warning); animation: blink .8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+/* layout */
+.page { padding: 1.75rem 2rem; max-width: 1100px; margin: 0 auto; }
+.glow { height: 1px; background: linear-gradient(90deg,transparent,var(--purple),var(--blue),transparent); margin-bottom: 1.75rem; opacity: .5; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 1.25rem; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.25rem; }
+
+/* stat cards */
+.stat {
+  background: linear-gradient(135deg,#1a1d38,#151830);
+  border: 1px solid var(--border); border-radius: var(--r-md);
+  padding: 1rem 1.25rem; position: relative; overflow: hidden;
+}
+.stat::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--accent-grad); opacity:.6; }
+.stat.flash { animation: statflash .4s ease-out; }
+@keyframes statflash { 0%{background:rgba(124,92,252,.25)} 100%{background:linear-gradient(135deg,#1a1d38,#151830)} }
+.stat-label { font-size:10px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; }
+.stat-value { font-size:26px; font-weight:600; font-family:var(--mono); color:var(--text-primary); line-height:1; }
+.stat-sub { font-size:10px; color:var(--text-tertiary); margin-top:4px; font-family:var(--mono); }
+
+/* card */
+.card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--r-lg); padding:1.25rem 1.5rem; }
+.card-title { font-size:12px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+.card-title i { font-size:14px; color:var(--purple-light); }
+
+/* buttons */
+.btn {
+  display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:500;
+  padding:8px 16px; border-radius:var(--r-sm); border:1px solid var(--border);
+  background:transparent; color:var(--text-primary); cursor:pointer; transition:all .15s;
+  font-family:var(--font); white-space:nowrap;
+}
+.btn:hover:not(:disabled) { background:rgba(255,255,255,.06); border-color:var(--border-hover); }
+.btn:active:not(:disabled) { transform:scale(.98); }
+.btn:disabled { opacity:.35; cursor:not-allowed; }
+.btn-primary { background:var(--accent-grad); border:none; color:#fff; box-shadow:0 2px 12px rgba(124,92,252,.3); }
+.btn-primary:hover:not(:disabled) { filter:brightness(1.08); background:var(--accent-grad); }
+.btn-danger { border-color:rgba(248,113,113,.3); color:var(--danger); }
+.btn-danger:hover:not(:disabled) { background:rgba(248,113,113,.08); }
+.btn-sm { font-size:12px; padding:5px 10px; }
+.row { display:flex; align-items:center; gap:8px; }
+.spacer { flex:1; }
+.divider { height:1px; background:var(--border); margin:14px 0; }
+
+/* badges */
+.badge { display:inline-flex; align-items:center; font-size:11px; font-weight:500; padding:3px 9px; border-radius:99px; }
+.badge-var   { background:rgba(79,142,247,.15); color:var(--blue-light); border:1px solid rgba(79,142,247,.25); }
+.badge-vs    { background:rgba(52,211,153,.12); color:var(--success);    border:1px solid rgba(52,211,153,.25); }
+.badge-event { background:rgba(251,191,36,.1);  color:var(--warning);    border:1px solid rgba(251,191,36,.2); }
+
+/* subs */
+.sub-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(120,100,255,.08); flex-wrap:wrap; }
+.sub-item:last-child { border-bottom:none; }
+.sub-item.paused { opacity:.4; }
+.sub-name  { font-size:13px; font-weight:500; color:var(--text-primary); flex:1; min-width:80px; }
+.sub-val   { font-size:12px; font-family:var(--mono); color:var(--teal); min-width:60px; text-align:right; }
+.sub-val.flash { color:#fff; }
+.sub-cnt   { font-size:11px; color:var(--text-tertiary); min-width:32px; text-align:right; font-family:var(--mono); }
+.empty-subs { text-align:center; color:var(--text-tertiary); font-size:12px; padding:1.5rem 0; }
+
+/* inputs */
+input[type=text] {
+  width:100%; background:rgba(255,255,255,.04); border:1px solid var(--border);
+  border-radius:var(--r-sm); padding:8px 12px; font-size:13px;
+  font-family:var(--font); color:var(--text-primary); outline:none;
+  transition:border-color .2s,box-shadow .2s;
+}
+input[type=text]:focus { border-color:var(--purple); box-shadow:0 0 0 3px rgba(124,92,252,.12); }
+input[type=text]::placeholder { color:var(--text-tertiary); }
+.field { margin-bottom:10px; }
+.field-label { font-size:11px; font-weight:500; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+.add-row { display:flex; gap:8px; align-items:center; }
+.add-row input { flex:1; }
+
+/* log */
+.log-box {
+  background:#0a0b18; border:1px solid var(--border); border-radius:var(--r-md);
+  padding:10px; height:320px; overflow-y:auto; font-family:var(--mono); font-size:12px;
+}
+.log-box::-webkit-scrollbar { width:4px; }
+.log-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+.log-entry { display:flex; align-items:baseline; gap:8px; padding:4px 6px; border-radius:6px; line-height:1.5; }
+.log-entry:hover { background:rgba(255,255,255,.03); }
+.log-ts  { color:var(--text-tertiary); font-size:11px; flex-shrink:0; }
+.log-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.log-msg { flex:1; color:var(--text-secondary); word-break:break-all; }
+.c-var{color:var(--blue-light)} .c-vs{color:var(--success)} .c-event{color:var(--warning)}
+.c-status{color:var(--text-tertiary);font-style:italic} .c-error{color:var(--danger)}
+.d-var{background:var(--blue)} .d-vs{background:var(--success)} .d-event{background:var(--warning)}
+.d-status{background:var(--text-tertiary)} .d-error{background:var(--danger)}
+.log-empty { text-align:center; color:var(--text-tertiary); padding:3rem 0; font-size:12px; font-family:var(--font); }
+
+/* sdk callout */
+.callout {
+  background:rgba(124,92,252,.06); border:1px solid rgba(124,92,252,.2);
+  border-radius:var(--r-md); padding:10px 14px; font-size:12px;
+  color:var(--text-secondary); margin-bottom:1.25rem; display:flex; align-items:center; gap:10px;
+}
+.callout code { font-family:var(--mono); font-size:11px; color:var(--purple-light); background:rgba(124,92,252,.12); padding:2px 7px; border-radius:4px; }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="logo"><i class="ti ti-broadcast"></i></div>
+  <div>
+    <div class="header-title">Anedya Stream SDK Demo</div>
+    <div class="header-sub">AnedyaStreamClient · browser demo</div>
+  </div>
+  <div class="hspacer"></div>
+  <div class="badge-pill" id="status-badge">
+    <div class="dot" id="pulse-dot"></div>
+    <span id="status-text">Disconnected</span>
+  </div>
+</header>
+
+<main class="page">
+  <div class="glow"></div>
+
+  <div class="callout">
+    <i class="ti ti-code" style="color:var(--purple-light);font-size:16px;flex-shrink:0"></i>
+    Uses <code>AnedyaStreamClient</code> from <code>@anedyasystems/anedya-frontend-sdk</code> —
+    loaded from the local <code>sdk-bundle.js</code> built from your SDK's <code>dist/index.mjs</code>.
+  </div>
+
+  <!-- stats -->
+  <div class="grid-3">
+    <div class="stat" id="stat-var">
+      <div class="stat-label">Variable updates</div>
+      <div class="stat-value" id="cnt-var">0</div>
+      <div class="stat-sub" id="last-var">waiting…</div>
+    </div>
+    <div class="stat" id="stat-vs">
+      <div class="stat-label">Value store updates</div>
+      <div class="stat-value" id="cnt-vs">0</div>
+      <div class="stat-sub" id="last-vs">waiting…</div>
+    </div>
+    <div class="stat" id="stat-ev">
+      <div class="stat-label">Events (catch-all)</div>
+      <div class="stat-value" id="cnt-ev">0</div>
+      <div class="stat-sub" id="last-ev">waiting…</div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <!-- subscriptions -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="card-title"><i class="ti ti-antenna"></i>Subscriptions</div>
+
+      <div class="field">
+        <div class="field-label">Variable</div>
+        <div class="add-row">
+          <input type="text" id="inp-var" placeholder="e.g. stream-test" />
+          <button class="btn btn-sm" id="btn-add-var"><i class="ti ti-plus"></i> Add</button>
+        </div>
+      </div>
+      <div class="field">
+        <div class="field-label">Value store key</div>
+        <div class="add-row">
+          <input type="text" id="inp-vs" placeholder="e.g. threshold" />
+          <button class="btn btn-sm" id="btn-add-vs"><i class="ti ti-plus"></i> Add</button>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <div class="field-label">Catch-all events</div>
+        <button class="btn btn-sm" id="btn-add-ev"><i class="ti ti-plus"></i> Add listener</button>
+      </div>
+
+      <div class="divider"></div>
+      <div id="sub-list"><div class="empty-subs"><i class="ti ti-antenna-off" style="font-size:20px;display:block;margin-bottom:6px"></i>No subscriptions yet</div></div>
+      <div class="divider"></div>
+
+      <div class="row">
+        <button class="btn btn-primary" id="btn-connect"><i class="ti ti-player-play"></i> Connect</button>
+        <button class="btn btn-danger" id="btn-disconnect" disabled><i class="ti ti-player-stop"></i> Disconnect</button>
+        <div class="spacer"></div>
+        <button class="btn" id="btn-pause" disabled>
+          <i class="ti ti-player-pause" id="pause-icon"></i>
+          <span id="pause-label">Pause all</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- log -->
+    <div class="card" style="display:flex;flex-direction:column">
+      <div class="row" style="margin-bottom:12px">
+        <div class="card-title" style="margin-bottom:0"><i class="ti ti-terminal"></i>Event log</div>
+        <div class="spacer"></div>
+        <button class="btn btn-sm" id="btn-clear"><i class="ti ti-trash"></i> Clear</button>
+      </div>
+      <div class="log-box" id="log-box">
+        <div class="log-empty"><i class="ti ti-waves-electricity" style="font-size:22px;display:block;margin-bottom:8px"></i>Waiting for stream…</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Load the bundled SDK -->
+<script src="sdk-bundle.js"></script>
+
+<script>
+// ── Credentials (hardcoded) ───────────────────────────────────────────────────
+const STREAM_ID  = "019ed381-8fd6-706e-8d7b-a0e93312c865";
+const STREAM_URL = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect";
+const TOKEN_ID   = "1LoygvNpcfieJOhsKiKkmPaV";
+const TOKEN      = "uardIpoF2nIDEa0SB1Uoeii51Jgt8WOqFUt5vnNlESmIUEj1mYEOBTyamC08VmuX";
+const NODE_ID    = "019ed37e-c9f9-7c0a-a20e-c24520e5d41f";
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let stream = null;
+let globalPaused = false;
+let varCount = 0, vsCount = 0, evCount = 0;
+let subs = [], subId = 0;
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+const LOG_MAP = {
+  var:    { dot:'d-var',    cls:'c-var'    },
+  vs:     { dot:'d-vs',     cls:'c-vs'     },
+  event:  { dot:'d-event',  cls:'c-event'  },
+  status: { dot:'d-status', cls:'c-status' },
+  error:  { dot:'d-error',  cls:'c-error'  },
+};
+function ts() { return new Date().toLocaleTimeString('en-GB',{hour12:false}); }
+function log(msg, type='status') {
+  const box = document.getElementById('log-box');
+  box.querySelector('.log-empty')?.remove();
+  const m = LOG_MAP[type] || LOG_MAP.status;
+  const el = document.createElement('div');
+  el.className = 'log-entry';
+  el.innerHTML = `<span class="log-ts">${ts()}</span><div class="log-dot ${m.dot}"></div><span class="log-msg ${m.cls}">${msg}</span>`;
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── UI helpers ────────────────────────────────────────────────────────────────
+function flash(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+function setStatus(s) {
+  const badge = document.getElementById('status-badge');
+  const dot   = document.getElementById('pulse-dot');
+  const txt   = document.getElementById('status-text');
+  badge.className = 'badge-pill'; dot.className = 'dot';
+  if (s === 'connected') {
+    badge.classList.add('connected'); dot.classList.add('on'); txt.textContent = 'Connected';
+    document.getElementById('btn-connect').disabled    = true;
+    document.getElementById('btn-disconnect').disabled = false;
+    document.getElementById('btn-pause').disabled      = false;
+  } else if (s === 'reconnecting') {
+    badge.classList.add('reconnecting'); dot.classList.add('blink'); txt.textContent = 'Reconnecting…';
+  } else {
+    txt.textContent = 'Disconnected';
+    document.getElementById('btn-connect').disabled    = false;
+    document.getElementById('btn-disconnect').disabled = true;
+    document.getElementById('btn-pause').disabled      = true;
+  }
+}
+function renderSubs() {
+  const list   = document.getElementById('sub-list');
+  const active = subs.filter(s => s.active);
+  if (!active.length) {
+    list.innerHTML = '<div class="empty-subs"><i class="ti ti-antenna-off" style="font-size:20px;display:block;margin-bottom:6px"></i>No subscriptions yet</div>';
+    return;
+  }
+  list.innerHTML = active.map(s => {
+    const bc = {variable:'badge-var',valuestore:'badge-vs',event:'badge-event'}[s.type];
+    const bl = {variable:'variable',valuestore:'value store',event:'event'}[s.type];
+    return `<div class="sub-item ${s.paused?'paused':''}" id="sr-${s.id}">
+      <span class="badge ${bc}">${bl}</span>
+      <span class="sub-name">${s.key||'all events'}</span>
+      <span class="sub-val" id="sv-${s.id}">—</span>
+      <span class="sub-cnt" id="sc-${s.id}">0</span>
+      <button class="btn btn-sm" id="sp-${s.id}" data-pause="${s.id}">${s.paused?'Resume':'Pause'}</button>
+      <button class="btn btn-sm btn-danger" data-cancel="${s.id}"><i class="ti ti-x"></i></button>
+    </div>`;
+  }).join('');
+}
+function incSub(id, value) {
+  const cnt = document.getElementById(`sc-${id}`);
+  const val = document.getElementById(`sv-${id}`);
+  if (cnt) cnt.textContent = parseInt(cnt.textContent||'0') + 1;
+  if (val && value !== undefined) {
+    val.textContent = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    val.classList.add('flash'); setTimeout(() => val.classList.remove('flash'), 400);
+  }
+}
+document.getElementById('sub-list').addEventListener('click', e => {
+  const pid = e.target.closest('[data-pause]')?.dataset.pause;
+  const cid = e.target.closest('[data-cancel]')?.dataset.cancel;
+  if (pid) togglePause(Number(pid));
+  if (cid) cancelSub(Number(cid));
+});
+function togglePause(id) {
+  const s = subs.find(x => x.id === id); if (!s) return;
+  s.paused ? s.handle.resume() : s.handle.pause();
+  s.paused = !s.paused;
+  document.getElementById(`sr-${id}`)?.classList.toggle('paused', s.paused);
+  const btn = document.getElementById(`sp-${id}`);
+  if (btn) btn.textContent = s.paused ? 'Resume' : 'Pause';
+  log(`"${s.key||'events'}" ${s.paused?'paused':'resumed'}`);
+}
+function cancelSub(id) {
+  const s = subs.find(x => x.id === id); if (!s) return;
+  s.handle.cancel(); s.active = false;
+  log(`Subscription "${s.key||'events'}" cancelled`);
+  renderSubs();
+}
+
+// ── Connect using the SDK ─────────────────────────────────────────────────────
+async function doConnect() {
+  if (!window.AnedyaSDK) {
+    log('sdk-bundle.js not loaded — see setup steps', 'error'); return;
+  }
+  const { Anedya } = window.AnedyaSDK;
+  const anedya = new Anedya();
+  const config = anedya.NewConfig(TOKEN_ID, TOKEN);
+  const client = anedya.NewClient(config);
+  const node   = anedya.NewNode(client, NODE_ID);
+  stream = anedya.NewStream(client, node, STREAM_ID, STREAM_URL);
+
+  stream.onStatus(s => {
+    setStatus(s);
+    log(`Status: ${s}`);
+  });
+  stream.onError(err => log(`Error: ${err}`, 'error'));
+
+  log('Connecting via AnedyaStreamClient.connect()…');
+
+  // Wire up any subs that were added before connecting
+  subs.filter(s => s.active).forEach(s => {
+    if (s.type === 'variable')   s.handle = stream.onVariable(s.key, makeVarCb(s));
+    if (s.type === 'valuestore') s.handle = stream.onValueStore(s.key, makeVSCb(s));
+    if (s.type === 'event')      s.handle = stream.onEvent(makeEvCb(s));
+  });
+
+  await stream.connect();
+}
+
+// ── Subscription callbacks ────────────────────────────────────────────────────
+function makeVarCb(s) {
+  return (data) => {
+    varCount++;
+    document.getElementById('cnt-var').textContent = varCount;
+    document.getElementById('last-var').textContent = `${data.variable} = ${JSON.stringify(data.value)}`;
+    flash('stat-var');
+    incSub(s.id, data.value);
+    log(`stream.onVariable(<strong class="c-var">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'var');
+  };
+}
+function makeVSCb(s) {
+  return (data) => {
+    vsCount++;
+    document.getElementById('cnt-vs').textContent = vsCount;
+    document.getElementById('last-vs').textContent = `${data.key} = ${JSON.stringify(data.value)}`;
+    flash('stat-vs');
+    incSub(s.id, data.value);
+    log(`stream.onValueStore(<strong class="c-vs">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'vs');
+  };
+}
+function makeEvCb(s) {
+  return (data) => {
+    evCount++;
+    document.getElementById('cnt-ev').textContent = evCount;
+    document.getElementById('last-ev').textContent = `${data.variable} · ${ts()}`;
+    flash('stat-ev');
+    incSub(s.id, data.value);
+    log(`stream.onEvent() → <strong class="c-event">${data.variable}</strong> = ${JSON.stringify(data.value)}`, 'event');
+  };
+}
+
+// ── Button wiring ─────────────────────────────────────────────────────────────
+document.getElementById('btn-connect').addEventListener('click', doConnect);
+
+document.getElementById('btn-disconnect').addEventListener('click', () => {
+  if (!stream) return;
+  stream.disconnect(); stream = null;
+  setStatus('disconnected');
+  log('Disconnected by user');
+});
+
+document.getElementById('btn-pause').addEventListener('click', () => {
+  if (!stream) return;
+  const icon  = document.getElementById('pause-icon');
+  const label = document.getElementById('pause-label');
+  globalPaused = !globalPaused;
+  if (globalPaused) {
+    stream.pause();
+    icon.className = 'ti ti-player-play'; label.textContent = 'Resume all';
+    log('Global delivery paused');
+  } else {
+    stream.resume();
+    icon.className = 'ti ti-player-pause'; label.textContent = 'Pause all';
+    log('Global delivery resumed');
+  }
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+  document.getElementById('log-box').innerHTML =
+    '<div class="log-empty"><i class="ti ti-waves-electricity" style="font-size:22px;display:block;margin-bottom:8px"></i>Log cleared</div>';
+});
+
+document.getElementById('btn-add-var').addEventListener('click', () => {
+  const key = document.getElementById('inp-var').value.trim(); if (!key) return;
+  const id = ++subId;
+  const s = { id, type:'variable', key, paused:false, active:true, handle:null };
+  if (stream) s.handle = stream.onVariable(key, makeVarCb(s));
+  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  subs.push(s);
+  document.getElementById('inp-var').value = '';
+  log(`Subscribed → stream.onVariable("${key}")`);
+  renderSubs();
+});
+
+document.getElementById('btn-add-vs').addEventListener('click', () => {
+  const key = document.getElementById('inp-vs').value.trim(); if (!key) return;
+  const id = ++subId;
+  const s = { id, type:'valuestore', key, paused:false, active:true, handle:null };
+  if (stream) s.handle = stream.onValueStore(key, makeVSCb(s));
+  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  subs.push(s);
+  document.getElementById('inp-vs').value = '';
+  log(`Subscribed → stream.onValueStore("${key}")`);
+  renderSubs();
+});
+
+document.getElementById('btn-add-ev').addEventListener('click', () => {
+  const id = ++subId;
+  const s = { id, type:'event', key:null, paused:false, active:true, handle:null };
+  if (stream) s.handle = stream.onEvent(makeEvCb(s));
+  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  subs.push(s);
+  log('Subscribed → stream.onEvent()');
+  renderSubs();
+});
+</script>
+</body>
+</html>
