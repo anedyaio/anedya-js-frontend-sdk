@@ -43,6 +43,13 @@ function clearLog() {
     '<div class="log-empty"><i class="ti ti-route"></i>Log cleared</div>';
 }
 
+// CBOR decodes large integers (like nanosecond/ms timestamps) as BigInt,
+// which Date() cannot accept directly — convert safely to Number first.
+function formatTimestamp(ts) {
+  const n = typeof ts === 'bigint' ? Number(ts) : (ts || Date.now());
+  return new Date(n).toLocaleTimeString();
+}
+
 // ─────────────────────────────────────────────────────────────────────────
 // UI helpers: flow steps + status badge
 // ─────────────────────────────────────────────────────────────────────────
@@ -250,10 +257,33 @@ function addVariableSub() {
   if (!stream) { log('Run the flow first', 'error'); return; }
 
   const id = ++subIdCounter;
-  const handle = stream.onVariable(key, (data) => {
+  const handle = stream.onVariable(key, async (data) => {
     incSubCount(id);
-    updateSubValue(id, data.value, `@ ${new Date(data.timestamp || Date.now()).toLocaleTimeString()} · type ${data.dataType}`);
+    updateSubValue(id, data.value, `@ ${formatTimestamp(data.timestamp)} · type ${data.dataType}`);
     log(`Variable <strong class="c-var">${key}</strong> → ${JSON.stringify(data.value)}`, 'var');
+
+    // ── Demonstrates why `node` is passed into the stream ──────────────────
+    // stream.node is the SAME NewNode instance created in Step 2. Inside this
+    // callback we can use it to make a normal REST call — pulling recent
+    // history for context — without creating a second node instance.
+    if (typeof data.value === 'number' && data.value > 80) {
+      log(`⚠️ "${key}" exceeded 80 — fetching last hour via stream.node.getData()…`, 'node');
+      try {
+        const history = await stream.node.getData({
+          variable: key,
+          from: Date.now() - 60 * 60 * 1000, // last hour
+          to: Date.now(),
+          limit: 10,
+        });
+        if (history?.isSuccess && history?.isDataAvailable) {
+          log(`📊 stream.node.getData() → ${history.data.length} points from the last hour`, 'node');
+        } else {
+          log(`📊 stream.node.getData() → no historical data available`, 'node');
+        }
+      } catch (err) {
+        log(`stream.node.getData() failed: ${err}`, 'error');
+      }
+    }
   });
 
   subs.push({ id, type: 'variable', key, handle, paused: false, active: true });
@@ -262,15 +292,22 @@ function addVariableSub() {
 }
 
 function addValueStoreSub() {
-  const key = document.getElementById('inp-vs').value.trim();
+  let key = document.getElementById('inp-vs').value.trim();
   if (!key) return;
+  // Defensive: strip accidental surrounding quotes (e.g. user pasted "test-stream")
+  key = key.replace(/^["']|["']$/g, '');
   if (!stream) { log('Run the flow first', 'error'); return; }
 
   const id = ++subIdCounter;
   const handle = stream.onValueStore(key, (data) => {
-    incSubCount(id);
-    updateSubValue(id, data.value, `scope: ${data.scope ?? '?'} · @ ${new Date(data.timestamp || Date.now()).toLocaleTimeString()}`);
-    log(`Value store <strong class="c-vs">${key}</strong> → ${JSON.stringify(data.value)}`, 'vs');
+    try {
+      incSubCount(id);
+      updateSubValue(id, data.value, `scope: ${data.scope ?? '?'} · @ ${formatTimestamp(data.timestamp)}`);
+      log(`Value store <strong class="c-vs">${key}</strong> → ${JSON.stringify(data.value)}`, 'vs');
+    } catch (err) {
+      console.error('🔥 Error inside onValueStore callback:', err);
+      log(`Error in value store callback: ${err.message}`, 'error');
+    }
   });
 
   subs.push({ id, type: 'valuestore', key, handle, paused: false, active: true });
@@ -284,7 +321,7 @@ function addEventSub() {
   const id = ++subIdCounter;
   const handle = stream.onEvent((data) => {
     incSubCount(id);
-    updateSubValue(id, data.value, `variable: ${data.variable} · @ ${new Date(data.timestamp || Date.now()).toLocaleTimeString()}`);
+    updateSubValue(id, data.value, `variable: ${data.variable} · @ ${formatTimestamp(data.timestamp)}`);
     log(`Event → <strong class="c-event">${data.variable}</strong> = ${JSON.stringify(data.value)}`, 'event');
   });
 
