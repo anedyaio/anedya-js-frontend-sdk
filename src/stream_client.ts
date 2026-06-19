@@ -171,7 +171,12 @@ export class AnedyaStreamClient {
       this.errorListeners.forEach((cb) => cb(event));
     };
 
-    this.ws.onclose = () => {
+    this.ws.onclose = (event) => {
+       console.log("WS CLOSED", {
+    code: event.code,
+    reason: event.reason,
+    wasClean: event.wasClean,
+  });
       this.isConnected = false;
       this.emitStatus("disconnected");
       if (!this.destroyed) this.scheduleReconnect();
@@ -285,47 +290,57 @@ export class AnedyaStreamClient {
 
   // ─── Internal: message routing ───────────────────────────────────────────────
 
-  private handleRawMessage(buffer: Uint8Array) {
-    if (buffer.length < 4) {
-      console.warn("Invalid message: too short");
-      return;
-    }
-
-    const byte1 = buffer[0];
-    const byte2 = buffer[1];
-    const dataType = buffer[2];
-
-    if (byte1 === 0x00 && byte2 === 0x02) {
-      this.routeValueStore(buffer.slice(2));
-    } else if (byte1 === 0x00 && byte2 === 0x01) {
-      this.routeVariableOrEvent(buffer.slice(3), dataType);
-    } else {
-      console.warn("Unknown message type:", byte1, byte2);
-    }
+private handleRawMessage(buffer: Uint8Array) {
+  if (buffer.length < 4) {
+    console.warn("Invalid message: too short");
+    return;
   }
 
-  private routeValueStore(payload: Uint8Array) {
-    try {
-      const decoded = decode(payload);
-      const data: ValueStoreData = {
-        nodeId: decoded?.ns?.id,
-        scope:  decoded?.ns?.scope,
-        key:    decoded?.key,
-        value:  decoded?.val,
-        timestamp: decoded?.ts,
-        type:   decoded?.t,
-      };
+  const byte1 = buffer[0];
+  const byte2 = buffer[1];
+  const dataType = buffer[2];
 
-      if (this.globalPaused) return;
+  // Log every raw frame so we can see what's arriving
+  console.log("📥 Raw frame:", Array.from(buffer).map(b => b.toString(16).padStart(2,'0')).join(' '));
+  console.log("Header:", `[0x${byte1.toString(16)}, 0x${byte2.toString(16)}]`, "dataType:", dataType);
 
-      this.valueStoreSubs
-        .filter((s) => s.active && !s.paused && s.key === data.key)
-        .forEach((s) => s.callback(data));
-    } catch (err) {
-      console.error("ValueStore decode error:", err);
-    }
+  if (byte1 === 0x00 && byte2 === 0x02) {
+    console.log("→ Identified as VALUE STORE, decoding slice(2):", Array.from(buffer.slice(2)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+    this.routeValueStore(buffer.slice(2));
+  } else if (byte1 === 0x00 && byte2 === 0x01) {
+    console.log("→ Identified as VARIABLE, decoding slice(3):", Array.from(buffer.slice(3)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+    this.routeVariableOrEvent(buffer.slice(3), dataType);
+  } else {
+    console.warn("Unknown message type:", byte1, byte2);
   }
+}
 
+private routeValueStore(payload: Uint8Array) {
+  try {
+    const decoded = decode(payload);
+
+    const data: ValueStoreData = {
+      nodeId: decoded?.ns?.id
+        ? Array.from(decoded.ns.id as Uint8Array)
+            .map((b) => (b as number).toString(16).padStart(2, "0"))
+            .join("")
+        : undefined,
+      scope:     decoded?.ns?.scope,
+      key:       decoded?.key,
+      value:     decoded?.val,
+      timestamp: decoded?.ts,
+      type:      decoded?.t,
+    };
+
+    if (this.globalPaused) return;
+
+    this.valueStoreSubs
+      .filter((s) => s.active && !s.paused && s.key === data.key)
+      .forEach((s) => s.callback(data));
+  } catch (err) {
+    console.error("❌ ValueStore decode error:", err);
+  }
+}
   private routeVariableOrEvent(payload: Uint8Array, dataType: number) {
     try {
       const decoded = decode(payload);

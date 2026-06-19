@@ -164,11 +164,11 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 <main class="page">
   <div class="glow"></div>
 
-  <div class="callout">
+  <!-- <div class="callout">
     <i class="ti ti-code" style="color:var(--purple-light);font-size:16px;flex-shrink:0"></i>
     Uses <code>AnedyaStreamClient</code> from <code>@anedyasystems/anedya-frontend-sdk</code> —
     loaded from the local <code>sdk-bundle.js</code> built from your SDK's <code>dist/index.mjs</code>.
-  </div>
+  </div> -->
 
   <!-- stats -->
   <div class="grid-3">
@@ -197,14 +197,14 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
       <div class="field">
         <div class="field-label">Variable</div>
         <div class="add-row">
-          <input type="text" id="inp-var" placeholder="e.g. stream-test" />
+          <input type="text" id="inp-var" placeholder="e.g. threshold" />
           <button class="btn btn-sm" id="btn-add-var"><i class="ti ti-plus"></i> Add</button>
         </div>
       </div>
       <div class="field">
         <div class="field-label">Value store key</div>
         <div class="add-row">
-          <input type="text" id="inp-vs" placeholder="e.g. threshold" />
+          <input type="text" id="inp-vs" placeholder="e.g. test-stream" />
           <button class="btn btn-sm" id="btn-add-vs"><i class="ti ti-plus"></i> Add</button>
         </div>
       </div>
@@ -246,17 +246,49 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 <script src="sdk-bundle.js"></script>
 
 <script>
-// ── Credentials (hardcoded) ───────────────────────────────────────────────────
-const STREAM_ID  = "019ed381-8fd6-706e-8d7b-a0e93312c865";
-const STREAM_URL = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect";
-const TOKEN_ID   = "1LoygvNpcfieJOhsKiKkmPaV";
-const TOKEN      = "uardIpoF2nIDEa0SB1Uoeii51Jgt8WOqFUt5vnNlESmIUEj1mYEOBTyamC08VmuX";
-const NODE_ID    = "019ed37e-c9f9-7c0a-a20e-c24520e5d41f";
+/* ============================================================================
+ * ANEDYA STREAM SDK — HOW THIS DEMO USES IT
+ * ----------------------------------------------------------------------------
+ * The core flow, every time, is:
+ *
+ *   1. const anedya = new Anedya()                            entry point
+ *   2. const config = anedya.NewConfig(tokenId, token)        your auth credentials
+ *   3. const client = anedya.NewClient(config)                an authenticated client
+ *   4. const node   = anedya.NewNode(client, nodeId)          scopes calls to ONE device
+ *   5. const stream = anedya.NewStream(client, node, streamId, streamUrl)
+ *   6. stream.onVariable(key, cb) / onValueStore(key, cb) / onEvent(cb)
+ *        — register subscriptions. Safe to call before OR after connect().
+ *   7. await stream.connect()                                  opens the WebSocket
+ *
+ * Every onVariable / onValueStore / onEvent call returns a handle with
+ * .pause() / .resume() / .cancel() — use these to manage one subscription
+ * without touching the connection itself.
+ *
+ * IMPORTANT GOTCHA: onEvent() is a catch-all, but it only catches VARIABLE
+ * messages. It does NOT fire for value-store updates. If you want to react
+ * to value-store changes, you must call onValueStore(key, cb) for each key
+ * you care about — there's no catch-all for those (yet).
+ * ========================================================================== */
+
+// ── Credentials (hardcoded for this demo only — never ship real tokens in
+//    client-side code for a production app; this is fine for local testing) ──
+const STREAM_ID  = "019edb52-4fd4-7bfe-a47c-fc89f99216b2";   // which configured stream (set up on the Anedya dashboard) to subscribe to
+const STREAM_URL = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"; // WebSocket endpoint for your workspace's stream gateway
+const TOKEN_ID   = "jTSZhBOOKW67TLJtqZKUFKy3";                // pairs with TOKEN below to authenticate the connection
+
+const TOKEN      = "f7nxYpgRD8qcd41Z6UXe6fBZnBBs4qRWdgY04a8n4krqaUcb80AiR7kgQHulOywt";
+const NODE_ID    = "019ed37e-c9f9-7c0a-a20e-c24520e5d41f";    // the device/node whose data you want — every subscription below is scoped to this node
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let stream = null;
+let stream = null;          // becomes the real AnedyaStreamClient instance once doConnect() runs
 let globalPaused = false;
 let varCount = 0, vsCount = 0, evCount = 0;
+// `subs` is this DEMO's own bookkeeping (for rendering the subscription list) —
+// it's separate from whatever internal subscription state the SDK itself keeps.
+// Each entry holds: which type of subscription it is, the key it's filtering on
+// (null for catch-all), UI flags, and `handle` — the actual object the SDK gave
+// us back from onVariable/onValueStore/onEvent, which is what pause/resume/cancel
+// actually call.
 let subs = [], subId = 0;
 
 // ── Logging ───────────────────────────────────────────────────────────────────
@@ -280,6 +312,7 @@ function log(msg, type='status') {
 }
 
 // ── UI helpers ────────────────────────────────────────────────────────────────
+// (Pure UI/DOM bookkeeping below — nothing SDK-specific until doConnect().)
 function flash(id) {
   const el = document.getElementById(id);
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
@@ -340,6 +373,9 @@ document.getElementById('sub-list').addEventListener('click', e => {
 });
 function togglePause(id) {
   const s = subs.find(x => x.id === id); if (!s) return;
+  // Per-subscription pause: stops just THIS callback from firing. It does NOT
+  // close the connection and does NOT affect any other subscription. Compare
+  // to the global "Pause all" button below, which suspends every callback at once.
   s.paused ? s.handle.resume() : s.handle.pause();
   s.paused = !s.paused;
   document.getElementById(`sr-${id}`)?.classList.toggle('paused', s.paused);
@@ -349,6 +385,9 @@ function togglePause(id) {
 }
 function cancelSub(id) {
   const s = subs.find(x => x.id === id); if (!s) return;
+  // .cancel() permanently removes this subscription — unlike pause/resume,
+  // there's no coming back from this without calling onVariable/onValueStore/
+  // onEvent again to create a fresh one.
   s.handle.cancel(); s.active = false;
   log(`Subscription "${s.key||'events'}" cancelled`);
   renderSubs();
@@ -360,31 +399,52 @@ async function doConnect() {
     log('sdk-bundle.js not loaded — see setup steps', 'error'); return;
   }
   const { Anedya } = window.AnedyaSDK;
-  const anedya = new Anedya();
-  const config = anedya.NewConfig(TOKEN_ID, TOKEN);
-  const client = anedya.NewClient(config);
-  const node   = anedya.NewNode(client, NODE_ID);
-  stream = anedya.NewStream(client, node, STREAM_ID, STREAM_URL);
 
+  // Steps 1–5 from the overview comment at the top of this file: each call
+  // wraps the previous one, narrowing scope from "the SDK" down to "this one
+  // stream on this one device".
+  const anedya = new Anedya();
+  const config = anedya.NewConfig(TOKEN_ID, TOKEN);   // holds your auth credentials
+  const client = anedya.NewClient(config);             // an authenticated client built from those credentials
+  const node   = anedya.NewNode(client, NODE_ID);      // scopes the client to one device/node
+  stream = anedya.NewStream(client, node, STREAM_ID, STREAM_URL); // the stream object everything else below talks to
+
+  // Fires on every connection lifecycle change: "connected" | "disconnected" | "reconnecting".
+  // Good place to drive connection-status UI.
   stream.onStatus(s => {
     setStatus(s);
     log(`Status: ${s}`);
   });
+  // Fires on transport-level errors (socket errors) — not the same as a
+  // per-message decode failure, which the SDK handles internally per message.
   stream.onError(err => log(`Error: ${err}`, 'error'));
 
   log('Connecting via AnedyaStreamClient.connect()…');
 
-  // Wire up any subs that were added before connecting
+  // Subscriptions added via the UI buttons *before* this point only exist in
+  // this demo's local `subs` array so far — `stream` was still null when the
+  // user clicked "Add", so each sub got a fake placeholder handle instead of
+  // a real one (see the button handlers further down). Now that the real
+  // `stream` object exists, go back and register each pending sub with it for
+  // real, replacing the placeholder handle with the actual SDK one.
   subs.filter(s => s.active).forEach(s => {
     if (s.type === 'variable')   s.handle = stream.onVariable(s.key, makeVarCb(s));
     if (s.type === 'valuestore') s.handle = stream.onValueStore(s.key, makeVSCb(s));
     if (s.type === 'event')      s.handle = stream.onEvent(makeEvCb(s));
   });
 
+  // This is the only line that actually touches the network — everything
+  // above just builds local JS objects and registers callbacks.
   await stream.connect();
 }
 
 // ── Subscription callbacks ────────────────────────────────────────────────────
+// Each of these is passed straight into onVariable/onValueStore/onEvent above
+// (either from doConnect()'s replay loop, or from the "Add" button handlers
+// below). The SDK calls them with one argument — the decoded message — every
+// time a matching update arrives over the WebSocket.
+
+// stream.onVariable(key, cb): cb fires ONLY for updates to that specific variable.
 function makeVarCb(s) {
   return (data) => {
     varCount++;
@@ -395,6 +455,7 @@ function makeVarCb(s) {
     log(`stream.onVariable(<strong class="c-var">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'var');
   };
 }
+// stream.onValueStore(key, cb): cb fires ONLY for updates to that specific value-store key.
 function makeVSCb(s) {
   return (data) => {
     vsCount++;
@@ -405,6 +466,9 @@ function makeVSCb(s) {
     log(`stream.onValueStore(<strong class="c-vs">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'vs');
   };
 }
+// stream.onEvent(cb): catch-all for VARIABLE messages regardless of which
+// variable they're for. Does NOT receive value-store updates — see the
+// gotcha note in the file-level comment at the top.
 function makeEvCb(s) {
   return (data) => {
     evCount++;
@@ -421,6 +485,10 @@ document.getElementById('btn-connect').addEventListener('click', doConnect);
 
 document.getElementById('btn-disconnect').addEventListener('click', () => {
   if (!stream) return;
+  // .disconnect() closes the WebSocket PERMANENTLY for this stream instance —
+  // no auto-reconnect will be attempted afterwards. If you just want to
+  // temporarily stop receiving callbacks without closing the socket, use the
+  // global "Pause all" button instead (stream.pause()/resume()).
   stream.disconnect(); stream = null;
   setStatus('disconnected');
   log('Disconnected by user');
@@ -432,6 +500,10 @@ document.getElementById('btn-pause').addEventListener('click', () => {
   const label = document.getElementById('pause-label');
   globalPaused = !globalPaused;
   if (globalPaused) {
+    // Global pause: suspends delivery of EVERY subscription's callback at
+    // once, without closing the connection. Compare to a single
+    // subscription's own .pause() (used in togglePause() above), which only
+    // affects that one subscription.
     stream.pause();
     icon.className = 'ti ti-player-play'; label.textContent = 'Resume all';
     log('Global delivery paused');
@@ -451,6 +523,9 @@ document.getElementById('btn-add-var').addEventListener('click', () => {
   const key = document.getElementById('inp-var').value.trim(); if (!key) return;
   const id = ++subId;
   const s = { id, type:'variable', key, paused:false, active:true, handle:null };
+  // If we're already connected, register with the real SDK right away.
+  // Otherwise, store a no-op placeholder handle — doConnect()'s replay loop
+  // will swap in the real one once connect() runs.
   if (stream) s.handle = stream.onVariable(key, makeVarCb(s));
   else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
   subs.push(s);

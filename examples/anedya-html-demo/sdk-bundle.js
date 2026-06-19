@@ -23,7 +23,7 @@ var AnedyaSDK = (() => {
   __export(index_exports, {
     Anedya: () => V,
     AnedyaDataType: () => X,
-    AnedyaDeleteKeyReq: () => k,
+    AnedyaDeleteKeyReq: () => x,
     AnedyaDeleteKeyResp: () => S,
     AnedyaError: () => K,
     AnedyaGetDataReq: () => C,
@@ -34,7 +34,7 @@ var AnedyaSDK = (() => {
     AnedyaGetLatestDataResp: () => h,
     AnedyaGetSnapshotReq: () => E,
     AnedyaGetSnapshotResp: () => I,
-    AnedyaScanKeysReq: () => x,
+    AnedyaScanKeysReq: () => k,
     AnedyaScanKeysResp: () => f,
     AnedyaScope: () => z,
     AnedyaSetKeyReq: () => N,
@@ -2404,7 +2404,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" }, this.namespace = { scope: "", id: "" }, this.key = "", this.value = void 0, this.type = "", this.size = 0, this.modified = 0, this.created = 0;
     }
   };
-  var k = class {
+  var x = class {
     constructor(e, r) {
       this.namespace = e;
       this.key = r;
@@ -2418,7 +2418,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" };
     }
   };
-  var x = class {
+  var k = class {
     constructor(e, r, t, o, n) {
       this.filter = e;
       this.orderby = r;
@@ -2674,8 +2674,8 @@ var AnedyaSDK = (() => {
         this.handleRawMessage(new Uint8Array(o.data));
       }, this.ws.onerror = (o) => {
         this.errorListeners.forEach((n) => n(o));
-      }, this.ws.onclose = () => {
-        this.isConnected = false, this.emitStatus("disconnected"), this.destroyed || this.scheduleReconnect();
+      }, this.ws.onclose = (o) => {
+        console.log("WS CLOSED", { code: o.code, reason: o.reason, wasClean: o.wasClean }), this.isConnected = false, this.emitStatus("disconnected"), this.destroyed || this.scheduleReconnect();
       };
     }
     pause() {
@@ -2711,15 +2711,15 @@ var AnedyaSDK = (() => {
         return;
       }
       let r = e[0], t = e[1], o = e[2];
-      r === 0 && t === 2 ? this.routeValueStore(e.slice(2)) : r === 0 && t === 1 ? this.routeVariableOrEvent(e.slice(3), o) : console.warn("Unknown message type:", r, t);
+      console.log("\u{1F4E5} Raw frame:", Array.from(e).map((n) => n.toString(16).padStart(2, "0")).join(" ")), console.log("Header:", `[0x${r.toString(16)}, 0x${t.toString(16)}]`, "dataType:", o), r === 0 && t === 2 ? (console.log("\u2192 Identified as VALUE STORE, decoding slice(2):", Array.from(e.slice(2)).map((n) => n.toString(16).padStart(2, "0")).join(" ")), this.routeValueStore(e.slice(2))) : r === 0 && t === 1 ? (console.log("\u2192 Identified as VARIABLE, decoding slice(3):", Array.from(e.slice(3)).map((n) => n.toString(16).padStart(2, "0")).join(" ")), this.routeVariableOrEvent(e.slice(3), o)) : console.warn("Unknown message type:", r, t);
     }
     routeValueStore(e) {
       try {
-        let r = decode(e), t = { nodeId: r?.ns?.id, scope: r?.ns?.scope, key: r?.key, value: r?.val, timestamp: r?.ts, type: r?.t };
+        let r = decode(e), t = { nodeId: r?.ns?.id ? Array.from(r.ns.id).map((o) => o.toString(16).padStart(2, "0")).join("") : void 0, scope: r?.ns?.scope, key: r?.key, value: r?.val, timestamp: r?.ts, type: r?.t };
         if (this.globalPaused) return;
         this.valueStoreSubs.filter((o) => o.active && !o.paused && o.key === t.key).forEach((o) => o.callback(t));
       } catch (r) {
-        console.error("ValueStore decode error:", r);
+        console.error("\u274C ValueStore decode error:", r);
       }
     }
     routeVariableOrEvent(e, r) {
