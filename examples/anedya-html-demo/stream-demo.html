@@ -225,6 +225,11 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
         <input type="text" id="cred-nid" placeholder="UUID" />
       </div>
     </div>
+    <div class="divider"></div>
+    <div class="row">
+      <div class="spacer"></div>
+      <button class="btn btn-sm" id="btn-save-creds"><i class="ti ti-device-floppy"></i> Save Credentials</button>
+    </div>
   </div>
 
   <!-- ──────────────────────────────────────────────
@@ -412,6 +417,36 @@ function checkCredsAndToggleConnect() {
 
 // Connect button starts disabled — enabled only when all fields filled
 document.getElementById('btn-connect').disabled = true;
+
+// Load saved credentials from localStorage if present
+function loadSavedCreds() {
+  try {
+    const creds = JSON.parse(localStorage.getItem('anedya_stream_creds'));
+    if (creds) {
+      document.getElementById('cred-url').value = creds.url || '';
+      document.getElementById('cred-sid').value = creds.sid || '';
+      document.getElementById('cred-tid').value = creds.tid || '';
+      document.getElementById('cred-tok').value = creds.token || '';
+      document.getElementById('cred-nid').value = creds.nid || '';
+      checkCredsAndToggleConnect();
+      log('Credentials loaded from local storage');
+    }
+  } catch (e) {
+    console.error('Error loading credentials from local storage:', e);
+  }
+}
+
+// Save credentials to localStorage
+function saveCreds() {
+  const c = getCreds();
+  try {
+    localStorage.setItem('anedya_stream_creds', JSON.stringify(c));
+    log('Credentials saved to local storage');
+  } catch (e) {
+    log('Failed to save credentials: ' + e.message, 'error');
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════════════════
 // STATE
@@ -719,6 +754,9 @@ function makeEvCb(s) {
 // Connect button → runs the full SDK init and opens the WebSocket
 document.getElementById('btn-connect').addEventListener('click', doConnect);
 
+// Save credentials button → saves inputs to localStorage
+document.getElementById('btn-save-creds').addEventListener('click', saveCreds);
+
 // Disconnect button → calls stream.disconnect() which sets destroyed = true
 // and closes the WebSocket. No reconnect will be attempted after this.
 document.getElementById('btn-disconnect').addEventListener('click', () => {
@@ -818,6 +856,9 @@ document.getElementById('btn-add-ev').addEventListener('click', () => {
   log('Subscribed → stream.onEvent()');
   renderSubs();
 });
+
+// Load saved credentials on page load
+loadSavedCreds();
 </script>
 </body>
 </html>
