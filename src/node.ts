@@ -109,7 +109,7 @@ export class NewNode implements INode {
    *
    * @example
    * ```ts
-   * console.log(node.getNodeId()); // "device123"
+   * //console.log(node.getNodeId()); // "device123"
    * ```
    */
   getNodeId(): string {
@@ -132,7 +132,7 @@ export class NewNode implements INode {
    * const req = new AnedyaGetDataReq("temperature", Date.now() - 86400000, Date.now(), 100);
    * const res = await node.getData(req);
    * if (res.isSuccess && res.isDataAvailable) {
-   *   console.log(res.data);
+   *   //console.log(res.data);
    * }
    * ```
    */
@@ -155,7 +155,7 @@ export class NewNode implements INode {
    * ```ts
    * const res = await node.getLatestData("temperature");
    * if (res.isSuccess && res.isDataAvailable) {
-   *   console.log("Latest value:", res.data);
+   *   //console.log("Latest value:", res.data);
    * }
    * ```
    */
@@ -201,7 +201,7 @@ export class NewNode implements INode {
    *
    * const res = await node.setKey(req);
    * if (res.isSuccess) {
-   *   console.log("Key set successfully!");
+   *   //console.log("Key set successfully!");
    * }
    * ```
    */
@@ -234,7 +234,7 @@ export class NewNode implements INode {
    *
    * const res = await node.getKey(req);
    * if (res.isSuccess && res.data) {
-   *   console.log("Key value:", res.data);
+   *   //console.log("Key value:", res.data);
    * }
    * ```
    */
@@ -267,7 +267,7 @@ export class NewNode implements INode {
    *
    * const res = await node.deleteKey(req);
    * if (res.isSuccess) {
-   *   console.log("Key deleted successfully!");
+   *   //console.log("Key deleted successfully!");
    * }
    * ```
    */
@@ -303,7 +303,7 @@ export class NewNode implements INode {
    *
    * const res = await node.scanKeys(req);
    * if (res.isSuccess && res.data) {
-   *   console.log("Keys scanned successfully!", res.data);
+   *   //console.log("Keys scanned successfully!", res.data);
    * }
    * ```
    */
@@ -340,8 +340,8 @@ export class NewNode implements INode {
    * const res = await node.getDeviceStatus(60);
    * if (res.isSuccess && res.data) {
    *   const status = res.data[node.getNodeId()];
-   *   console.log("Online:", status.online);
-   *   console.log("Last heartbeat at:", new Date(status.lastHeartbeat * 1000));
+   *   //console.log("Online:", status.online);
+   *   //console.log("Last heartbeat at:", new Date(status.lastHeartbeat * 1000));
    * }
    * ```
    *
@@ -387,7 +387,7 @@ export class NewNode implements INode {
    * const res = await node.getSnapshot(req);
    * if (res.isSuccess && res.data.length > 0) {
    *   const snapshot = res.data[0];
-   *   console.log("Temperature at", new Date(snapshot.timestamp * 1000), "was", snapshot.value);
+   *   //console.log("Temperature at", new Date(snapshot.timestamp * 1000), "was", snapshot.value);
    * }
    * ```
    *
@@ -397,7 +397,7 @@ export class NewNode implements INode {
    * const req = new AnedyaGetSnapshotReq(1695084912, "humidity", ["node123", "node456"]);
    * const res = await node.getSnapshot(req);
    * res.data.forEach((entry) => {
-   *   console.log(entry.node, "had humidity", entry.value, "at", new Date(entry.timestamp * 1000));
+   *   //console.log(entry.node, "had humidity", entry.value, "at", new Date(entry.timestamp * 1000));
    * });
    * ```
    */

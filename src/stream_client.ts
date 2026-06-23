@@ -75,12 +75,12 @@ interface EventSub {
  * const stream = new AnedyaStreamClient(client, node, streamId, streamUrl);
  *
  * const sub = stream.onVariable("temperature", (data) => {
- *   console.log(data.value);
+ *   //console.log(data.value);
  *   if (data.value > 80) sub.pause();   // pause just this subscription
  * });
  *
  * const vsSub = stream.onValueStore("config-key", (data) => {
- *   console.log(data.value);
+ *   //console.log(data.value);
  *   vsSub.cancel();                     // one-shot: cancel after first hit
  * });
  *
@@ -158,7 +158,7 @@ export class AnedyaStreamClient {
     this.ws.onopen = () => {
       this.isConnected = true;
       this.reconnectAttempts = 0;
-      console.log("✅ Stream connected");
+      //console.log("✅ Stream connected");
       this.emitStatus("connected");
     };
 
@@ -172,11 +172,11 @@ export class AnedyaStreamClient {
     };
 
     this.ws.onclose = (event) => {
-       console.log("WS CLOSED", {
-    code: event.code,
-    reason: event.reason,
-    wasClean: event.wasClean,
-  });
+       //console.log("WS CLOSED", {
+  //   code: event.code,
+  //   reason: event.reason,
+  //   wasClean: event.wasClean,
+  // });
       this.isConnected = false;
       this.emitStatus("disconnected");
       if (!this.destroyed) this.scheduleReconnect();
@@ -209,7 +209,7 @@ export class AnedyaStreamClient {
    * @example
    * ```ts
    * const sub = stream.onVariable("temperature", (data) => {
-   *   console.log("Temp:", data.value);
+   *   //console.log("Temp:", data.value);
    *   if (data.value > 100) sub.cancel(); // unsubscribe when done
    * });
    * ```
@@ -263,7 +263,7 @@ export class AnedyaStreamClient {
    * @example
    * ```ts
    * const sub = stream.onEvent((data) => {
-   *   console.log("Event from node:", data.nodeId, "variable:", data.variable);
+   *   //console.log("Event from node:", data.nodeId, "variable:", data.variable);
    * });
    * ```
    */
@@ -301,14 +301,14 @@ private handleRawMessage(buffer: Uint8Array) {
   const dataType = buffer[2];
 
   // Log every raw frame so we can see what's arriving
-  console.log("📥 Raw frame:", Array.from(buffer).map(b => b.toString(16).padStart(2,'0')).join(' '));
-  console.log("Header:", `[0x${byte1.toString(16)}, 0x${byte2.toString(16)}]`, "dataType:", dataType);
+  //console.log("📥 Raw frame:", Array.from(buffer).map(b => b.toString(16).padStart(2,'0')).join(' '));
+  //console.log("Header:", `[0x${byte1.toString(16)}, 0x${byte2.toString(16)}]`, "dataType:", dataType);
 
   if (byte1 === 0x00 && byte2 === 0x02) {
-    console.log("→ Identified as VALUE STORE, decoding slice(2):", Array.from(buffer.slice(2)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+    //console.log("→ Identified as VALUE STORE, decoding slice(2):", Array.from(buffer.slice(2)).map(b => b.toString(16).padStart(2,'0')).join(' '));
     this.routeValueStore(buffer.slice(2));
   } else if (byte1 === 0x00 && byte2 === 0x01) {
-    console.log("→ Identified as VARIABLE, decoding slice(3):", Array.from(buffer.slice(3)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+    //console.log("→ Identified as VARIABLE, decoding slice(3):", Array.from(buffer.slice(3)).map(b => b.toString(16).padStart(2,'0')).join(' '));
     this.routeVariableOrEvent(buffer.slice(3), dataType);
   } else {
     console.warn("Unknown message type:", byte1, byte2);

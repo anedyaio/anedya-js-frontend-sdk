@@ -66,7 +66,7 @@ export const setKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -149,7 +149,7 @@ export const getKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -161,7 +161,7 @@ export const getKey = async (
 
     try {
       const responseData: _AnedyaGetKeyResp = await response.json();
-      // console.log(responseData);
+      // //console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;
@@ -230,7 +230,7 @@ export const deleteKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -242,7 +242,7 @@ export const deleteKey = async (
     let res: IAnedyaDeleteKeyResp = new AnedyaDeleteKeyResp();
     try {
       const responseData: _AnedyaDeleteKeyResp = await response.json();
-      // console.log(responseData);
+      // //console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;
@@ -313,7 +313,7 @@ export const scanKeys = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",

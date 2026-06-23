@@ -47,7 +47,7 @@ export const getSnapshot = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -59,7 +59,7 @@ export const getSnapshot = async (
     try {
       const responseData: _AnedyaGetSnapshotResp =
         await response.json();
-      // console.log(responseData);
+      // //console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;

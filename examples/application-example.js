@@ -44,7 +44,7 @@ const stream = new AnedyaStreamClient(client, node_1, streamId, streamUrl);
 async function getNodeId() {
   try {
     const nodeId = node_1.getNodeId();
-    console.log("Node Id:", nodeId);
+    //console.log("Node Id:", nodeId);
   } catch (error) {
     console.error("Error getting Node Id:", error);
   }
@@ -65,9 +65,9 @@ async function getData() {
     res = await node_1.getData(req);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
-        console.log("Data:", res.data);
+        //console.log("Data:", res.data);
       } else {
-        console.log("No data available in Requested timestamp!!");
+        //console.log("No data available in Requested timestamp!!");
       }
     } else {
       console.error("Error fetching data:", res.error.errorMessage);
@@ -84,9 +84,9 @@ async function getLatestData() {
     res = await node_1.getLatestData(variableIdentifier);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
-        console.log("Latest Data:", res.data);
+        //console.log("Latest Data:", res.data);
       } else {
-        console.log("No latest data available!");
+        //console.log("No latest data available!");
       }
     } else {
       console.error("Error fetching latest data:", res.error);
@@ -108,7 +108,7 @@ async function setKey() {
     res = await node_1.setKey(req);
 
     if (res.isSuccess) {
-      console.log("Key set successfully!");
+      //console.log("Key set successfully!");
     } else {
       console.error("Error setting key:", res);
     }
@@ -124,7 +124,7 @@ async function getKey() {
     res = await node_1.getKey(req);
 
     if (res.isSuccess) {
-      console.log("Key fetched successfully!");
+      //console.log("Key fetched successfully!");
     } else {
       console.error("Error fetching key:", res);
     }
@@ -140,7 +140,7 @@ async function deleteKey() {
     res = await node_1.deleteKey(req);
 
     if (res.isSuccess) {
-      console.log("Key deleted successfully!");
+      //console.log("Key deleted successfully!");
     } else {
       console.error("Error deleting key: ", res.error.errorMessage);
     }
@@ -162,7 +162,7 @@ async function scanKeys() {
     res = await node_1.scanKeys(req);
 
     if (res.isSuccess) {
-      console.log("Keys scanned successfully!");
+      //console.log("Keys scanned successfully!");
     } else {
       console.error("Error scanning Keys:", res);
     }
@@ -176,7 +176,7 @@ async function getDeviceStatus() {
   try {
     let res = new AnedyaGetDeviceStatusResp();
     res = await node_1.getDeviceStatus(10);
-    console.log("Device Status:", res);
+    //console.log("Device Status:", res);
   } catch (error) {
     console.error("Error getting Device Status:", error);
   }
@@ -194,7 +194,7 @@ async function getSnapshot() {
     // Make the Req
     res = await node_1.getSnapshot(req);
 
-    console.log("Snapshot:", res);
+    //console.log("Snapshot:", res);
   } catch (error) {
     console.error("Error getting Snapshot:", error);
   }
@@ -217,12 +217,12 @@ async function testStream() {
   });
 
   const thresholdSub = stream.onValueStore("threshold", (data) => {
-    console.log("🗄️ New threshold:", data.value);
+    //console.log("🗄️ New threshold:", data.value);
     thresholdSub.cancel();
   });
 
   const eventSub = stream.onEvent((data) => {
-    console.log("📡 Event:", data.variable, data.value);
+    //console.log("📡 Event:", data.variable, data.value);
   });
 
   await stream.connect();

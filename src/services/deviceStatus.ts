@@ -42,7 +42,7 @@ export const getDeviceStatus = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
+    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -54,7 +54,7 @@ export const getDeviceStatus = async (
     try {
       const responseData: _AnedyaGetDeviceStatusResp =
         await response.json();
-      // console.log(responseData);
+      // //console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;

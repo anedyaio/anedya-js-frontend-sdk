@@ -670,7 +670,9 @@ async function doConnect() {
   const node = anedya.NewNode(client, c.nid);
 
   // Step 5 — Create the stream using the stream ID and URL from the inputs.
+
   stream = anedya.NewStream(client, node, c.sid, c.url);
+  console.log(c?.sid,"check stream id")
 
   // Step 6 — Register global listeners before connecting.
   stream.onStatus(s => {

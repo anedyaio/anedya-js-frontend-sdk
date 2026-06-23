@@ -60,6 +60,6 @@ const bodyHashBuffer = await crypto.subtle.digest(
       .join("");
 
   } catch (e) {
-    console.log(e);
+    //console.log(e);
   }
 };

@@ -48,7 +48,7 @@ interface _AnedyaGetDataResp {
  * const req = new AnedyaGetDataReq("temperature", from, to, 100);
  * const res = await getData(baseUrl, headers, ["node123"], req);
  * if (res.isSuccess && res.isDataAvailable) {
- *   console.log(res.data);
+ *   //console.log(res.data);
  * }
  * ```
  */
@@ -171,7 +171,7 @@ interface _AnedyaGetLatestDataResp {
  * const req = { variable: "temperature" };
  * const res = await fetchLatestData(baseUrl, headers, ["node123"], req);
  * if (res.isSuccess && res.isDataAvailable) {
- *   console.log("Latest Data:", res.data);
+ *   //console.log("Latest Data:", res.data);
  * }
  * ```
  */
