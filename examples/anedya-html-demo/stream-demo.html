@@ -137,7 +137,10 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 .d-status{background:var(--text-tertiary)} .d-error{background:var(--danger)}
 .log-empty { text-align:center; color:var(--text-tertiary); padding:3rem 0; font-size:12px; font-family:var(--font); }
 
-/* sdk callout */
+/* credentials card */
+.cred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin-bottom: 14px; }
+.cred-grid .field { margin-bottom: 0; }
+.cred-full { grid-column: 1 / -1; }
 .callout {
   background:rgba(124,92,252,.06); border:1px solid rgba(124,92,252,.2);
   border-radius:var(--r-md); padding:10px 14px; font-size:12px;
@@ -148,6 +151,32 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 </head>
 <body>
 
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  ANEDYA STREAM SDK — BROWSER DEMO
+  ═══════════════════════════════════════════════════════════════════
+  This file demonstrates how to use @anedyasystems/anedya-frontend-sdk
+  in a plain browser environment (no Node.js, no server required).
+
+  HOW IT WORKS — HIGH LEVEL:
+  1. The SDK is loaded from sdk-bundle.js (a pre-built browser bundle).
+  2. On "Connect", the SDK creates a signed WebSocket connection to the
+     Anedya streaming endpoint.
+  3. You can subscribe to specific variable updates, value store key
+     changes, or catch all events from the stream.
+  4. Each subscription gives you a handle to pause, resume, or cancel
+     it independently. There's also a global pause/resume for all.
+
+  PREREQUISITES:
+  - sdk-bundle.js must be in the same folder as this HTML file.
+  - Build it once from the SDK root with:
+      npx esbuild dist/index.mjs --bundle --format=iife
+        --global-name=AnedyaSDK --platform=browser
+        --outfile=examples/stream-demo/sdk-bundle.js
+  ═══════════════════════════════════════════════════════════════════
+-->
+
+<!-- Sticky header showing the app title and live connection status pill -->
 <header class="header">
   <div class="logo"><i class="ti ti-broadcast"></i></div>
   <div>
@@ -155,6 +184,11 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
     <div class="header-sub">AnedyaStreamClient · browser demo</div>
   </div>
   <div class="hspacer"></div>
+  <!--
+    Connection status pill — updated by setStatus() in JS.
+    States: Disconnected (default) → Connected → Reconnecting…
+    The animated dot gives a quick visual read of the connection state.
+  -->
   <div class="badge-pill" id="status-badge">
     <div class="dot" id="pulse-dot"></div>
     <span id="status-text">Disconnected</span>
@@ -164,13 +198,42 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 <main class="page">
   <div class="glow"></div>
 
-  <!-- <div class="callout">
-    <i class="ti ti-code" style="color:var(--purple-light);font-size:16px;flex-shrink:0"></i>
-    Uses <code>AnedyaStreamClient</code> from <code>@anedyasystems/anedya-frontend-sdk</code> —
-    loaded from the local <code>sdk-bundle.js</code> built from your SDK's <code>dist/index.mjs</code>.
-  </div> -->
 
-  <!-- stats -->
+
+  <!-- credentials input card -->
+  <div class="card section" style="margin-bottom:1.25rem">
+    <div class="card-title"><i class="ti ti-key"></i>Credentials</div>
+    <div class="cred-grid">
+      <div class="field">
+        <div class="field-label">Stream URL</div>
+        <input type="text" id="cred-url" placeholder="wss://…" />
+      </div>
+      <div class="field">
+        <div class="field-label">Stream ID</div>
+        <input type="text" id="cred-sid" placeholder="UUID" />
+      </div>
+      <div class="field">
+        <div class="field-label">Token ID</div>
+        <input type="text" id="cred-tid" placeholder="Token ID" />
+      </div>
+      <div class="field">
+        <div class="field-label">Token</div>
+        <input type="text" id="cred-tok" placeholder="Paste token…" />
+      </div>
+      <div class="field cred-full">
+        <div class="field-label">Node ID</div>
+        <input type="text" id="cred-nid" placeholder="UUID" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ──────────────────────────────────────────────
+    Three stat cards that update in real time as messages arrive:
+    - Variable updates: fired by stream.onVariable() callbacks
+    - Value store updates: fired by stream.onValueStore() callbacks
+    - Events (catch-all): fired by stream.onEvent() callbacks
+    Each card flashes purple briefly when a new message arrives.
+  -->
   <div class="grid-3">
     <div class="stat" id="stat-var">
       <div class="stat-label">Variable updates</div>
@@ -190,33 +253,81 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
   </div>
 
   <div class="grid-2">
-    <!-- subscriptions -->
+    <!--
+      ── LEFT PANEL: SUBSCRIPTIONS + CONTROLS ───────────────────
+      This panel lets you add three types of subscriptions:
+
+      1. VARIABLE subscription (stream.onVariable)
+         - Fires when a specific IoT variable (e.g. "temperature")
+           gets a new data point submitted from a device.
+         - You filter by variable name — only matching messages
+           trigger your callback.
+
+      2. VALUE STORE subscription (stream.onValueStore)
+         - Fires when a key in the platform's key-value store
+           is created, updated, or deleted.
+         - Useful for watching config values or thresholds that
+           change at runtime (e.g. "threshold", "setpoint").
+
+      3. CATCH-ALL EVENT listener (stream.onEvent)
+         - Fires for every variable message regardless of name.
+         - Good for logging everything or building a generic handler.
+
+      Each subscription row shows:
+      - The subscription type badge (variable / value store / event)
+      - The key name being watched
+      - The last received value (flashes on update)
+      - A message count
+      - Pause / Resume button (pauses just this subscription)
+      - Cancel button (permanently removes this subscription)
+    -->
     <div class="card" style="display:flex;flex-direction:column">
       <div class="card-title"><i class="ti ti-antenna"></i>Subscriptions</div>
 
+      <!-- Variable subscription input -->
       <div class="field">
         <div class="field-label">Variable</div>
         <div class="add-row">
-          <input type="text" id="inp-var" placeholder="e.g. threshold" />
+          <input type="text" id="inp-var" placeholder="e.g. stream-test" />
           <button class="btn btn-sm" id="btn-add-var"><i class="ti ti-plus"></i> Add</button>
         </div>
       </div>
+
+      <!-- Value store key subscription input -->
       <div class="field">
         <div class="field-label">Value store key</div>
         <div class="add-row">
-          <input type="text" id="inp-vs" placeholder="e.g. test-stream" />
+          <input type="text" id="inp-vs" placeholder="e.g. threshold" />
           <button class="btn btn-sm" id="btn-add-vs"><i class="ti ti-plus"></i> Add</button>
         </div>
       </div>
+
+      <!-- Catch-all event listener (no key needed — listens to everything) -->
       <div class="field" style="margin-bottom:0">
         <div class="field-label">Catch-all events</div>
         <button class="btn btn-sm" id="btn-add-ev"><i class="ti ti-plus"></i> Add listener</button>
       </div>
 
       <div class="divider"></div>
-      <div id="sub-list"><div class="empty-subs"><i class="ti ti-antenna-off" style="font-size:20px;display:block;margin-bottom:6px"></i>No subscriptions yet</div></div>
+
+      <!-- Active subscription rows are rendered here by renderSubs() -->
+      <div id="sub-list">
+        <div class="empty-subs">
+          <i class="ti ti-antenna-off" style="font-size:20px;display:block;margin-bottom:6px"></i>
+          No subscriptions yet
+        </div>
+      </div>
+
       <div class="divider"></div>
 
+      <!--
+        Connection controls:
+        - Connect: builds the SDK chain and opens the WebSocket
+        - Disconnect: closes the WebSocket permanently (no reconnect)
+        - Pause all: stops dispatching to ALL callbacks without
+          closing the connection — messages still arrive at the
+          socket level, they're just held back until you resume
+      -->
       <div class="row">
         <button class="btn btn-primary" id="btn-connect"><i class="ti ti-player-play"></i> Connect</button>
         <button class="btn btn-danger" id="btn-disconnect" disabled><i class="ti ti-player-stop"></i> Disconnect</button>
@@ -228,7 +339,17 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
       </div>
     </div>
 
-    <!-- log -->
+    <!--
+      ── RIGHT PANEL: EVENT LOG ──────────────────────────────────
+      A timestamped live log of everything happening on the stream:
+      - SDK method calls (what your code is doing)
+      - Incoming variable values (blue)
+      - Incoming value store updates (green)
+      - Catch-all events (amber)
+      - Connection status changes (grey italic)
+      - Errors (red)
+      Messages are colour-coded by type for quick scanning.
+    -->
     <div class="card" style="display:flex;flex-direction:column">
       <div class="row" style="margin-bottom:12px">
         <div class="card-title" style="margin-bottom:0"><i class="ti ti-terminal"></i>Event log</div>
@@ -236,62 +357,81 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
         <button class="btn btn-sm" id="btn-clear"><i class="ti ti-trash"></i> Clear</button>
       </div>
       <div class="log-box" id="log-box">
-        <div class="log-empty"><i class="ti ti-waves-electricity" style="font-size:22px;display:block;margin-bottom:8px"></i>Waiting for stream…</div>
+        <div class="log-empty">
+          <i class="ti ti-waves-electricity" style="font-size:22px;display:block;margin-bottom:8px"></i>
+          Waiting for stream…
+        </div>
       </div>
     </div>
   </div>
 </main>
 
-<!-- Load the bundled SDK -->
+<!--
+  ── SDK BUNDLE ──────────────────────────────────────────────────────
+  This loads the pre-built SDK bundle. esbuild packed the entire SDK
+  (including cbor-x for binary CBOR decoding) into this single file
+  and exposed it as window.AnedyaSDK.
+
+  After this script runs, window.AnedyaSDK contains:
+    { Anedya, AnedyaGetDataReq, AnedyaSetKeyReq, ... }
+
+  The Anedya class is the main entry point — it has factory methods:
+    anedya.NewConfig(tokenId, token)       → NewConfig
+    anedya.NewClient(config)               → NewClient
+    anedya.NewNode(client, nodeId)         → NewNode
+    anedya.NewStream(client, node, ...)    → AnedyaStreamClient
+-->
 <script src="sdk-bundle.js"></script>
 
 <script>
-/* ============================================================================
- * ANEDYA STREAM SDK — HOW THIS DEMO USES IT
- * ----------------------------------------------------------------------------
- * The core flow, every time, is:
- *
- *   1. const anedya = new Anedya()                            entry point
- *   2. const config = anedya.NewConfig(tokenId, token)        your auth credentials
- *   3. const client = anedya.NewClient(config)                an authenticated client
- *   4. const node   = anedya.NewNode(client, nodeId)          scopes calls to ONE device
- *   5. const stream = anedya.NewStream(client, node, streamId, streamUrl)
- *   6. stream.onVariable(key, cb) / onValueStore(key, cb) / onEvent(cb)
- *        — register subscriptions. Safe to call before OR after connect().
- *   7. await stream.connect()                                  opens the WebSocket
- *
- * Every onVariable / onValueStore / onEvent call returns a handle with
- * .pause() / .resume() / .cancel() — use these to manage one subscription
- * without touching the connection itself.
- *
- * IMPORTANT GOTCHA: onEvent() is a catch-all, but it only catches VARIABLE
- * messages. It does NOT fire for value-store updates. If you want to react
- * to value-store changes, you must call onValueStore(key, cb) for each key
- * you care about — there's no catch-all for those (yet).
- * ========================================================================== */
+// ═══════════════════════════════════════════════════════════════════
+// CREDENTIALS
+// ═══════════════════════════════════════════════════════════════════
+// Read from the input fields at the top of the page.
+// The Connect button stays disabled until all five fields are filled.
+function getCreds() {
+  return {
+    url:   document.getElementById('cred-url').value.trim(),
+    sid:   document.getElementById('cred-sid').value.trim(),
+    tid:   document.getElementById('cred-tid').value.trim(),
+    token: document.getElementById('cred-tok').value.trim(),
+    nid:   document.getElementById('cred-nid').value.trim(),
+  };
+}
 
-// ── Credentials (hardcoded for this demo only — never ship real tokens in
-//    client-side code for a production app; this is fine for local testing) ──
-const STREAM_ID  = "019edb52-4fd4-7bfe-a47c-fc89f99216b2";   // which configured stream (set up on the Anedya dashboard) to subscribe to
-const STREAM_URL = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"; // WebSocket endpoint for your workspace's stream gateway
-const TOKEN_ID   = "jTSZhBOOKW67TLJtqZKUFKy3";                // pairs with TOKEN below to authenticate the connection
+function checkCredsAndToggleConnect() {
+  const c = getCreds();
+  const allFilled = c.url && c.sid && c.tid && c.token && c.nid;
+  document.getElementById('btn-connect').disabled = !allFilled;
+}
 
-const TOKEN      = "f7nxYpgRD8qcd41Z6UXe6fBZnBBs4qRWdgY04a8n4krqaUcb80AiR7kgQHulOywt";
-const NODE_ID    = "019ed37e-c9f9-7c0a-a20e-c24520e5d41f";    // the device/node whose data you want — every subscription below is scoped to this node
+// Listen for input on all five credential fields
+['cred-url','cred-sid','cred-tid','cred-tok','cred-nid'].forEach(id => {
+  document.getElementById(id).addEventListener('input', checkCredsAndToggleConnect);
+});
 
-// ── State ─────────────────────────────────────────────────────────────────────
-let stream = null;          // becomes the real AnedyaStreamClient instance once doConnect() runs
+// Connect button starts disabled — enabled only when all fields filled
+document.getElementById('btn-connect').disabled = true;
+
+// ═══════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════
+// stream      — the active AnedyaStreamClient instance (null when disconnected)
+// globalPaused — tracks whether "Pause all" is currently active
+// varCount etc — running totals shown in the stat cards
+// subs        — array of subscription records tracked by this UI
+// subId       — auto-incrementing ID used to identify each subscription row
+let stream = null;
 let globalPaused = false;
 let varCount = 0, vsCount = 0, evCount = 0;
-// `subs` is this DEMO's own bookkeeping (for rendering the subscription list) —
-// it's separate from whatever internal subscription state the SDK itself keeps.
-// Each entry holds: which type of subscription it is, the key it's filtering on
-// (null for catch-all), UI flags, and `handle` — the actual object the SDK gave
-// us back from onVariable/onValueStore/onEvent, which is what pause/resume/cancel
-// actually call.
 let subs = [], subId = 0;
 
-// ── Logging ───────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// LOGGING
+// ═══════════════════════════════════════════════════════════════════
+// Each log entry has a timestamp, a coloured dot, and a message.
+// The type determines the colour — 'var' = blue, 'vs' = green,
+// 'event' = amber, 'status' = grey, 'error' = red.
 const LOG_MAP = {
   var:    { dot:'d-var',    cls:'c-var'    },
   vs:     { dot:'d-vs',     cls:'c-vs'     },
@@ -299,152 +439,239 @@ const LOG_MAP = {
   status: { dot:'d-status', cls:'c-status' },
   error:  { dot:'d-error',  cls:'c-error'  },
 };
-function ts() { return new Date().toLocaleTimeString('en-GB',{hour12:false}); }
-function log(msg, type='status') {
+
+function ts() {
+  return new Date().toLocaleTimeString('en-GB', { hour12: false });
+}
+
+function log(msg, type = 'status') {
   const box = document.getElementById('log-box');
-  box.querySelector('.log-empty')?.remove();
+  box.querySelector('.log-empty')?.remove(); // clear the placeholder on first message
   const m = LOG_MAP[type] || LOG_MAP.status;
   const el = document.createElement('div');
   el.className = 'log-entry';
   el.innerHTML = `<span class="log-ts">${ts()}</span><div class="log-dot ${m.dot}"></div><span class="log-msg ${m.cls}">${msg}</span>`;
   box.appendChild(el);
-  box.scrollTop = box.scrollHeight;
+  box.scrollTop = box.scrollHeight; // auto-scroll to latest entry
 }
 
-// ── UI helpers ────────────────────────────────────────────────────────────────
-// (Pure UI/DOM bookkeeping below — nothing SDK-specific until doConnect().)
+// ═══════════════════════════════════════════════════════════════════
+// UI HELPERS
+// ═══════════════════════════════════════════════════════════════════
+
+// Triggers the CSS flash animation on a stat card when new data arrives
 function flash(id) {
   const el = document.getElementById(id);
-  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+  el.classList.remove('flash');
+  void el.offsetWidth; // force reflow so the animation restarts cleanly
+  el.classList.add('flash');
 }
+
+// Updates the connection status pill in the header and enables/disables
+// the Connect / Disconnect / Pause buttons to match the current state.
 function setStatus(s) {
   const badge = document.getElementById('status-badge');
   const dot   = document.getElementById('pulse-dot');
   const txt   = document.getElementById('status-text');
-  badge.className = 'badge-pill'; dot.className = 'dot';
+  badge.className = 'badge-pill';
+  dot.className   = 'dot';
   if (s === 'connected') {
     badge.classList.add('connected'); dot.classList.add('on'); txt.textContent = 'Connected';
     document.getElementById('btn-connect').disabled    = true;
     document.getElementById('btn-disconnect').disabled = false;
     document.getElementById('btn-pause').disabled      = false;
   } else if (s === 'reconnecting') {
+    // SDK auto-reconnects on unexpected close — up to 5 attempts, 3s apart
     badge.classList.add('reconnecting'); dot.classList.add('blink'); txt.textContent = 'Reconnecting…';
   } else {
     txt.textContent = 'Disconnected';
-    document.getElementById('btn-connect').disabled    = false;
+    checkCredsAndToggleConnect(); // re-enable connect only if all fields still filled
     document.getElementById('btn-disconnect').disabled = true;
     document.getElementById('btn-pause').disabled      = true;
   }
 }
+
+// Updates the subscription list UI without resetting existing rows.
+// Only appends new rows — existing rows (and their counters) are left untouched.
 function renderSubs() {
   const list   = document.getElementById('sub-list');
   const active = subs.filter(s => s.active);
+
   if (!active.length) {
     list.innerHTML = '<div class="empty-subs"><i class="ti ti-antenna-off" style="font-size:20px;display:block;margin-bottom:6px"></i>No subscriptions yet</div>';
     return;
   }
-  list.innerHTML = active.map(s => {
-    const bc = {variable:'badge-var',valuestore:'badge-vs',event:'badge-event'}[s.type];
-    const bl = {variable:'variable',valuestore:'value store',event:'event'}[s.type];
-    return `<div class="sub-item ${s.paused?'paused':''}" id="sr-${s.id}">
+
+  // Remove empty state placeholder if present
+  list.querySelector('.empty-subs')?.remove();
+
+  active.forEach(s => {
+    if (document.getElementById(`sr-${s.id}`)) {
+      // Row already exists — just sync pause state without recreating it
+      document.getElementById(`sr-${s.id}`).className = `sub-item ${s.paused ? 'paused' : ''}`;
+      const pb = document.getElementById(`sp-${s.id}`);
+      if (pb) pb.textContent = s.paused ? 'Resume' : 'Pause';
+      return;
+    }
+    // New row — create and append it (counters start at 0 only for new subs)
+    const bc = { variable:'badge-var', valuestore:'badge-vs', event:'badge-event' }[s.type];
+    const bl = { variable:'variable',  valuestore:'value store', event:'event' }[s.type];
+    const row = document.createElement('div');
+    row.className = `sub-item ${s.paused ? 'paused' : ''}`;
+    row.id = `sr-${s.id}`;
+    row.innerHTML = `
       <span class="badge ${bc}">${bl}</span>
-      <span class="sub-name">${s.key||'all events'}</span>
+      <span class="sub-name">${s.key || 'all events'}</span>
       <span class="sub-val" id="sv-${s.id}">—</span>
       <span class="sub-cnt" id="sc-${s.id}">0</span>
-      <button class="btn btn-sm" id="sp-${s.id}" data-pause="${s.id}">${s.paused?'Resume':'Pause'}</button>
+      <button class="btn btn-sm" id="sp-${s.id}" data-pause="${s.id}">${s.paused ? 'Resume' : 'Pause'}</button>
       <button class="btn btn-sm btn-danger" data-cancel="${s.id}"><i class="ti ti-x"></i></button>
-    </div>`;
-  }).join('');
+    `;
+    list.appendChild(row);
+  });
+
+  // Remove any rows whose subscription was cancelled
+  list.querySelectorAll('.sub-item').forEach(row => {
+    const id = Number(row.id.replace('sr-', ''));
+    if (!active.find(s => s.id === id)) row.remove();
+  });
 }
+
+// Updates a subscription row's last value and increments its message counter.
+// The value flashes white briefly to show it just changed.
 function incSub(id, value) {
   const cnt = document.getElementById(`sc-${id}`);
   const val = document.getElementById(`sv-${id}`);
-  if (cnt) cnt.textContent = parseInt(cnt.textContent||'0') + 1;
+  if (cnt) cnt.textContent = parseInt(cnt.textContent || '0') + 1;
   if (val && value !== undefined) {
     val.textContent = typeof value === 'object' ? JSON.stringify(value) : String(value);
-    val.classList.add('flash'); setTimeout(() => val.classList.remove('flash'), 400);
+    val.classList.add('flash');
+    setTimeout(() => val.classList.remove('flash'), 400);
   }
 }
+
+// Delegated click handler for the subscription list.
+// Because rows are dynamically rendered, we listen on the parent container
+// and check which button was actually clicked using data attributes.
 document.getElementById('sub-list').addEventListener('click', e => {
   const pid = e.target.closest('[data-pause]')?.dataset.pause;
   const cid = e.target.closest('[data-cancel]')?.dataset.cancel;
   if (pid) togglePause(Number(pid));
   if (cid) cancelSub(Number(cid));
 });
+
+// Pauses or resumes a single subscription.
+// sub.handle.pause() / .resume() are methods on the IStreamSubscription
+// object returned by stream.onVariable() / onValueStore() / onEvent().
+// Pausing a subscription stops its callback from firing, but the
+// WebSocket connection and all other subscriptions are unaffected.
 function togglePause(id) {
-  const s = subs.find(x => x.id === id); if (!s) return;
-  // Per-subscription pause: stops just THIS callback from firing. It does NOT
-  // close the connection and does NOT affect any other subscription. Compare
-  // to the global "Pause all" button below, which suspends every callback at once.
+  const s = subs.find(x => x.id === id);
+  if (!s) return;
   s.paused ? s.handle.resume() : s.handle.pause();
   s.paused = !s.paused;
   document.getElementById(`sr-${id}`)?.classList.toggle('paused', s.paused);
   const btn = document.getElementById(`sp-${id}`);
   if (btn) btn.textContent = s.paused ? 'Resume' : 'Pause';
-  log(`"${s.key||'events'}" ${s.paused?'paused':'resumed'}`);
+  log(`"${s.key || 'events'}" ${s.paused ? 'paused' : 'resumed'}`);
 }
+
+// Permanently cancels a subscription via sub.handle.cancel().
+// After cancel(), the SDK will never call this subscription's callback again.
+// The subscription is also removed from the UI.
 function cancelSub(id) {
-  const s = subs.find(x => x.id === id); if (!s) return;
-  // .cancel() permanently removes this subscription — unlike pause/resume,
-  // there's no coming back from this without calling onVariable/onValueStore/
-  // onEvent again to create a fresh one.
-  s.handle.cancel(); s.active = false;
-  log(`Subscription "${s.key||'events'}" cancelled`);
+  const s = subs.find(x => x.id === id);
+  if (!s) return;
+  s.handle.cancel();
+  s.active = false;
+  log(`Subscription "${s.key || 'events'}" cancelled`);
   renderSubs();
 }
 
-// ── Connect using the SDK ─────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// CONNECT — THE CORE SDK USAGE
+// ═══════════════════════════════════════════════════════════════════
+// This function shows exactly how to initialise and connect the SDK.
+// The SDK uses a layered builder pattern:
+//
+//   NewConfig  → holds the token credentials
+//   NewClient  → wraps the config, pre-encodes token bytes for signing
+//   NewNode    → represents the IoT device (node) you want data from
+//   NewStream  → the AnedyaStreamClient, which manages the WebSocket
+//
+// AnedyaStreamClient.connect() internally:
+//   1. Gets the current Unix timestamp (seconds)
+//   2. Generates an HMAC-SHA256 signature:
+//        SHA256( SHA256(body) + timestamp_bytes + "v1" + token_bytes )
+//   3. Appends the signature + credentials as query params on the WS URL
+//   4. Opens the WebSocket and sets binaryType = "arraybuffer"
+//   5. On each message, parses the binary frame header:
+//        [0x00, 0x01, dataType, ...cbor_payload] → variable data
+//        [0x00, 0x02, dataType, ...cbor_payload] → value store data
+//   6. CBOR-decodes the payload and routes it to matching subscribers
 async function doConnect() {
   if (!window.AnedyaSDK) {
-    log('sdk-bundle.js not loaded — see setup steps', 'error'); return;
+    log('sdk-bundle.js not loaded — see setup steps in the HTML comments', 'error');
+    return;
   }
+
+  const c = getCreds();
+  if (!c.url || !c.sid || !c.tid || !c.token || !c.nid) {
+    log('Fill in all credential fields before connecting', 'error'); return;
+  }
+
   const { Anedya } = window.AnedyaSDK;
 
-  // Steps 1–5 from the overview comment at the top of this file: each call
-  // wraps the previous one, narrowing scope from "the SDK" down to "this one
-  // stream on this one device".
+  // Step 1 — Instantiate the SDK entry point
   const anedya = new Anedya();
-  const config = anedya.NewConfig(TOKEN_ID, TOKEN);   // holds your auth credentials
-  const client = anedya.NewClient(config);             // an authenticated client built from those credentials
-  const node   = anedya.NewNode(client, NODE_ID);      // scopes the client to one device/node
-  stream = anedya.NewStream(client, node, STREAM_ID, STREAM_URL); // the stream object everything else below talks to
 
-  // Fires on every connection lifecycle change: "connected" | "disconnected" | "reconnecting".
-  // Good place to drive connection-status UI.
+  // Step 2 — Create a config from your token credentials.
+  const config = anedya.NewConfig(c.tid, c.token);
+
+  // Step 3 — Create a client from the config.
+  const client = anedya.NewClient(config);
+
+  // Step 4 — Create a node scoped to the device ID from the input.
+  const node = anedya.NewNode(client, c.nid);
+
+  // Step 5 — Create the stream using the stream ID and URL from the inputs.
+  stream = anedya.NewStream(client, node, c.sid, c.url);
+
+  // Step 6 — Register global listeners before connecting.
   stream.onStatus(s => {
     setStatus(s);
     log(`Status: ${s}`);
   });
-  // Fires on transport-level errors (socket errors) — not the same as a
-  // per-message decode failure, which the SDK handles internally per message.
+
   stream.onError(err => log(`Error: ${err}`, 'error'));
 
   log('Connecting via AnedyaStreamClient.connect()…');
 
-  // Subscriptions added via the UI buttons *before* this point only exist in
-  // this demo's local `subs` array so far — `stream` was still null when the
-  // user clicked "Add", so each sub got a fake placeholder handle instead of
-  // a real one (see the button handlers further down). Now that the real
-  // `stream` object exists, go back and register each pending sub with it for
-  // real, replacing the placeholder handle with the actual SDK one.
+  // Step 7 — Re-attach any subscriptions that were added before connecting.
   subs.filter(s => s.active).forEach(s => {
     if (s.type === 'variable')   s.handle = stream.onVariable(s.key, makeVarCb(s));
     if (s.type === 'valuestore') s.handle = stream.onValueStore(s.key, makeVSCb(s));
     if (s.type === 'event')      s.handle = stream.onEvent(makeEvCb(s));
   });
 
-  // This is the only line that actually touches the network — everything
-  // above just builds local JS objects and registers callbacks.
+  // Step 8 — Open the WebSocket connection.
+  // This generates the signature, builds the signed URL, and calls
+  // new WebSocket(url) with binaryType = "arraybuffer".
   await stream.connect();
 }
 
-// ── Subscription callbacks ────────────────────────────────────────────────────
-// Each of these is passed straight into onVariable/onValueStore/onEvent above
-// (either from doConnect()'s replay loop, or from the "Add" button handlers
-// below). The SDK calls them with one argument — the decoded message — every
-// time a matching update arrives over the WebSocket.
+// ═══════════════════════════════════════════════════════════════════
+// SUBSCRIPTION CALLBACKS
+// ═══════════════════════════════════════════════════════════════════
+// Each "make*Cb" function returns a callback to pass into the SDK's
+// subscription methods. They're factories so each callback closes
+// over its own subscription record (s) for UI updates.
 
-// stream.onVariable(key, cb): cb fires ONLY for updates to that specific variable.
+// Called by stream.onVariable(key, cb) when a variable message arrives.
+// data.variable = the variable name (e.g. "temperature")
+// data.value    = the submitted value
+// data.timestamp = when the data point was recorded (Unix ms)
+// data.dataType  = the encoded data type byte from the binary frame header
 function makeVarCb(s) {
   return (data) => {
     varCount++;
@@ -455,7 +682,11 @@ function makeVarCb(s) {
     log(`stream.onVariable(<strong class="c-var">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'var');
   };
 }
-// stream.onValueStore(key, cb): cb fires ONLY for updates to that specific value-store key.
+
+// Called by stream.onValueStore(key, cb) when a value store message arrives.
+// data.key   = the key that was set/updated/deleted
+// data.value = the new value
+// data.scope = "node" or "global" (where the key lives)
 function makeVSCb(s) {
   return (data) => {
     vsCount++;
@@ -466,9 +697,10 @@ function makeVSCb(s) {
     log(`stream.onValueStore(<strong class="c-vs">${s.key}</strong>) → ${JSON.stringify(data.value)}`, 'vs');
   };
 }
-// stream.onEvent(cb): catch-all for VARIABLE messages regardless of which
-// variable they're for. Does NOT receive value-store updates — see the
-// gotcha note in the file-level comment at the top.
+
+// Called by stream.onEvent(cb) for every incoming variable message,
+// regardless of variable name. Useful as a catch-all logger or
+// for building generic handlers that don't care about the variable name.
 function makeEvCb(s) {
   return (data) => {
     evCount++;
@@ -480,77 +712,108 @@ function makeEvCb(s) {
   };
 }
 
-// ── Button wiring ─────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// BUTTON WIRING
+// ═══════════════════════════════════════════════════════════════════
+
+// Connect button → runs the full SDK init and opens the WebSocket
 document.getElementById('btn-connect').addEventListener('click', doConnect);
 
+// Disconnect button → calls stream.disconnect() which sets destroyed = true
+// and closes the WebSocket. No reconnect will be attempted after this.
 document.getElementById('btn-disconnect').addEventListener('click', () => {
   if (!stream) return;
-  // .disconnect() closes the WebSocket PERMANENTLY for this stream instance —
-  // no auto-reconnect will be attempted afterwards. If you just want to
-  // temporarily stop receiving callbacks without closing the socket, use the
-  // global "Pause all" button instead (stream.pause()/resume()).
-  stream.disconnect(); stream = null;
+  stream.disconnect();
+  stream = null;
   setStatus('disconnected');
   log('Disconnected by user');
 });
 
+// Pause all / Resume all → calls stream.pause() or stream.resume().
+// This sets a globalPaused flag inside AnedyaStreamClient.
+// While paused, the WebSocket stays open and messages keep arriving,
+// but none of the subscription callbacks are invoked until resumed.
+// This is different from pausing a single subscription — it affects all.
 document.getElementById('btn-pause').addEventListener('click', () => {
   if (!stream) return;
   const icon  = document.getElementById('pause-icon');
   const label = document.getElementById('pause-label');
   globalPaused = !globalPaused;
   if (globalPaused) {
-    // Global pause: suspends delivery of EVERY subscription's callback at
-    // once, without closing the connection. Compare to a single
-    // subscription's own .pause() (used in togglePause() above), which only
-    // affects that one subscription.
     stream.pause();
-    icon.className = 'ti ti-player-play'; label.textContent = 'Resume all';
-    log('Global delivery paused');
+    icon.className = 'ti ti-player-play';
+    label.textContent = 'Resume all';
+    log('Global delivery paused — WebSocket still open, callbacks suppressed');
   } else {
     stream.resume();
-    icon.className = 'ti ti-player-pause'; label.textContent = 'Pause all';
+    icon.className = 'ti ti-player-pause';
+    label.textContent = 'Pause all';
     log('Global delivery resumed');
   }
 });
 
+// Clear log button
 document.getElementById('btn-clear').addEventListener('click', () => {
   document.getElementById('log-box').innerHTML =
     '<div class="log-empty"><i class="ti ti-waves-electricity" style="font-size:22px;display:block;margin-bottom:8px"></i>Log cleared</div>';
 });
 
+// ── Add variable subscription ──────────────────────────────────────
+// stream.onVariable(variableId, callback) → IStreamSubscription
+// Registers a callback that fires only when a message for this specific
+// variable arrives. Returns a handle with .pause() / .resume() / .cancel().
+//
+// If the stream isn't connected yet, we store a dummy handle so the UI
+// works. doConnect() replaces dummy handles with real SDK handles.
 document.getElementById('btn-add-var').addEventListener('click', () => {
-  const key = document.getElementById('inp-var').value.trim(); if (!key) return;
+  const key = document.getElementById('inp-var').value.trim();
+  if (!key) return;
   const id = ++subId;
-  const s = { id, type:'variable', key, paused:false, active:true, handle:null };
-  // If we're already connected, register with the real SDK right away.
-  // Otherwise, store a no-op placeholder handle — doConnect()'s replay loop
-  // will swap in the real one once connect() runs.
-  if (stream) s.handle = stream.onVariable(key, makeVarCb(s));
-  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  const s = { id, type: 'variable', key, paused: false, active: true, handle: null };
+  if (stream) {
+    s.handle = stream.onVariable(key, makeVarCb(s));
+  } else {
+    // Dummy handle — replaced by doConnect() when the stream is created
+    s.handle = { pause: () => { s.paused = true; }, resume: () => { s.paused = false; }, cancel: () => { s.active = false; } };
+  }
   subs.push(s);
   document.getElementById('inp-var').value = '';
   log(`Subscribed → stream.onVariable("${key}")`);
   renderSubs();
 });
 
+// ── Add value store subscription ───────────────────────────────────
+// stream.onValueStore(key, callback) → IStreamSubscription
+// Registers a callback that fires when the specified key in the
+// platform's value store is set, updated, or deleted.
 document.getElementById('btn-add-vs').addEventListener('click', () => {
-  const key = document.getElementById('inp-vs').value.trim(); if (!key) return;
+  const key = document.getElementById('inp-vs').value.trim();
+  if (!key) return;
   const id = ++subId;
-  const s = { id, type:'valuestore', key, paused:false, active:true, handle:null };
-  if (stream) s.handle = stream.onValueStore(key, makeVSCb(s));
-  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  const s = { id, type: 'valuestore', key, paused: false, active: true, handle: null };
+  if (stream) {
+    s.handle = stream.onValueStore(key, makeVSCb(s));
+  } else {
+    s.handle = { pause: () => { s.paused = true; }, resume: () => { s.paused = false; }, cancel: () => { s.active = false; } };
+  }
   subs.push(s);
   document.getElementById('inp-vs').value = '';
   log(`Subscribed → stream.onValueStore("${key}")`);
   renderSubs();
 });
 
+// ── Add catch-all event listener ───────────────────────────────────
+// stream.onEvent(callback) → IStreamSubscription
+// Fires for every variable message on the stream, regardless of name.
+// Multiple onEvent listeners can be registered — all will fire.
 document.getElementById('btn-add-ev').addEventListener('click', () => {
   const id = ++subId;
-  const s = { id, type:'event', key:null, paused:false, active:true, handle:null };
-  if (stream) s.handle = stream.onEvent(makeEvCb(s));
-  else s.handle = { pause:()=>{s.paused=true}, resume:()=>{s.paused=false}, cancel:()=>{s.active=false} };
+  const s = { id, type: 'event', key: null, paused: false, active: true, handle: null };
+  if (stream) {
+    s.handle = stream.onEvent(makeEvCb(s));
+  } else {
+    s.handle = { pause: () => { s.paused = true; }, resume: () => { s.paused = false; }, cancel: () => { s.active = false; } };
+  }
   subs.push(s);
   log('Subscribed → stream.onEvent()');
   renderSubs();
