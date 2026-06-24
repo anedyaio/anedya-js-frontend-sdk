@@ -385,6 +385,44 @@ stream.onError((err) => {
 
 If the connection drops unexpectedly, the stream automatically retries with a 3-second delay, up to 5 attempts. Calling `disconnect()` cancels all future reconnect attempts. Subscriptions survive reconnects and resume firing once the connection is restored.
 
+---
+
+## Data Shapes
+
+**VariableData** — delivered by `onVariable`, and by `onAllMessages` (tagged with `kind: "variable"`):
+
+```ts
+{
+  nodeId:    string | undefined  // source node (hex string)
+  variable:  string              // variable identifier
+  value:     any                 // current value
+  timestamp: number              // Unix seconds
+  dataType:  number              // data type byte
+}
+```
+
+**ValueStoreData** — delivered by `onValueStore`, and by `onAllMessages` (tagged with `kind: "valuestore"`):
+
+```ts
+{
+  nodeId:    string | undefined  // source node (hex string)
+  scope:     string | undefined  // store scope
+  key:       string              // key name
+  value:     any                 // stored value
+  timestamp: number              // Unix seconds
+  type:      any                 // type metadata
+}
+```
+
+**AllMessagesData** — the union type delivered by `onAllMessages`. It's either of the above shapes plus a `kind` discriminant:
+
+```ts
+type AllMessagesData =
+  | (VariableData & { kind: "variable" })
+  | (ValueStoreData & { kind: "valuestore" });
+```
+
+
 
 
 
