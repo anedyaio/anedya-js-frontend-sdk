@@ -47,23 +47,23 @@ Every SDK operation starts by initialising a client and a node. Use environment 
 
 ```js
 const { Anedya } = require("@anedyasystems/anedya-frontend-sdk");
-require("dotenv").config();
+
 
 const anedya = new Anedya();
-const config = anedya.NewConfig(process.env.ANEDYA_TOKEN_ID, process.env.ANEDYA_TOKEN);
+const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
 const client = anedya.NewClient(config);
-const node   = anedya.NewNode(client, process.env.ANEDYA_NODE_ID);
+const node   = anedya.NewNode(client, "YOUR_NODE_ID");
 ```
 
-**React, Vite, Next.js, or any other bundler** — `import`. Browser-side env vars must be exposed by your bundler's convention (e.g. `import.meta.env.VITE_*` for Vite, `process.env.NEXT_PUBLIC_*` for Next.js) — `dotenv` itself does not work in browser code:
+**React, Vite, Next.js, or any other bundler** — `import`:
 
 ```js
 import { Anedya } from "@anedyasystems/anedya-frontend-sdk";
 
 const anedya = new Anedya();
-const config = anedya.NewConfig(import.meta.env.VITE_ANEDYA_TOKEN_ID, import.meta.env.VITE_ANEDYA_TOKEN);
+const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
 const client = anedya.NewClient(config);
-const node   = anedya.NewNode(client, import.meta.env.VITE_ANEDYA_NODE_ID);
+const node   = anedya.NewNode(client, "YOUR_NODE_ID");
 ```
 
 **Plain browser `<script>` tag (no bundler)** — load the pre-built IIFE bundle, which exposes everything on `window.AnedyaSDK`:
@@ -269,8 +269,6 @@ stream.onError((err)   => console.error("Error:", err));
 await stream.connect();
 ```
 
-> Swap in your own credentials however your environment loads them — `process.env.*` in Node, your bundler's env-var convention in a frontend build (see [Setup](#setup) above), or inline values directly in a plain `<script>` page.
-
 To close the stream permanently:
 
 ```js
@@ -344,10 +342,11 @@ const sub = stream.onVariable("temperature", (data) => {
 });
 ```
 
-**cancel** — one-shot pattern, unsubscribe after the first message:
+**cancel** — permanently unsubscribe whenever your logic decides it's done. The example below cancels after the very first message, but you could just as easily cancel after the 10th, after a value crosses some threshold, or on any other condition:
 
 ```js
 const sub = stream.onValueStore("config", (data) => {
+  // applyConfig is your own function — do whatever you need with the value here
   applyConfig(data.value);
   sub.cancel();
 });
@@ -422,3 +421,9 @@ type AllMessagesData =
   | (VariableData & { kind: "variable" })
   | (ValueStoreData & { kind: "valuestore" });
 ```
+
+
+
+
+
+
