@@ -41,7 +41,9 @@ npm install @anedyasystems/anedya-frontend-sdk
 
 ## Setup
 
-Every SDK operation starts by initialising a client and a node. Use environment variables to keep credentials out of your source code.
+Every SDK operation starts by initialising a client and a node. Use environment variables to keep credentials out of your source code. The package ships both CommonJS and ESM builds, so the import syntax depends on your environment:
+
+**Node.js (CommonJS)** — `require`:
 
 ```js
 const { Anedya } = require("@anedyasystems/anedya-frontend-sdk");
@@ -52,6 +54,33 @@ const config = anedya.NewConfig(process.env.ANEDYA_TOKEN_ID, process.env.ANEDYA_
 const client = anedya.NewClient(config);
 const node   = anedya.NewNode(client, process.env.ANEDYA_NODE_ID);
 ```
+
+**React, Vite, Next.js, or any other bundler** — `import`. Browser-side env vars must be exposed by your bundler's convention (e.g. `import.meta.env.VITE_*` for Vite, `process.env.NEXT_PUBLIC_*` for Next.js) — `dotenv` itself does not work in browser code:
+
+```js
+import { Anedya } from "@anedyasystems/anedya-frontend-sdk";
+
+const anedya = new Anedya();
+const config = anedya.NewConfig(import.meta.env.VITE_ANEDYA_TOKEN_ID, import.meta.env.VITE_ANEDYA_TOKEN);
+const client = anedya.NewClient(config);
+const node   = anedya.NewNode(client, import.meta.env.VITE_ANEDYA_NODE_ID);
+```
+
+**Plain browser `<script>` tag (no bundler)** — load the pre-built IIFE bundle, which exposes everything on `window.AnedyaSDK`:
+
+```html
+<script src="sdk-bundle.js"></script>
+<script>
+  const { Anedya } = window.AnedyaSDK;
+
+  const anedya = new Anedya();
+  const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
+  const client = anedya.NewClient(config);
+  const node   = anedya.NewNode(client, "YOUR_NODE_ID");
+</script>
+```
+
+> There's no safe way to keep secrets out of plain client-side `<script>` code — anything in it is visible to anyone who views the page source. Only use hardcoded tokens here for local testing, not in anything you ship publicly.
 
 `client` holds your credentials and signs every request automatically. `node` is the entry point for all data and value store operations.
 
@@ -239,6 +268,8 @@ stream.onError((err)   => console.error("Error:", err));
 
 await stream.connect();
 ```
+
+> Swap in your own credentials however your environment loads them — `process.env.*` in Node, your bundler's env-var convention in a frontend build (see [Setup](#setup) above), or inline values directly in a plain `<script>` page.
 
 To close the stream permanently:
 
