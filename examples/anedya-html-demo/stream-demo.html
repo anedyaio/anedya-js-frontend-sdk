@@ -93,7 +93,7 @@ body { font-family: var(--font); background: var(--bg); color: var(--text-primar
 .badge { display:inline-flex; align-items:center; font-size:11px; font-weight:500; padding:3px 9px; border-radius:99px; }
 .badge-var   { background:rgba(79,142,247,.15); color:var(--blue-light); border:1px solid rgba(79,142,247,.25); }
 .badge-vs    { background:rgba(52,211,153,.12); color:var(--success);    border:1px solid rgba(52,211,153,.25); }
-.badge-event { background:rgba(251,191,36,.1);  color:var(--warning);    border:1px solid rgba(251,191,36,.2); }
+.badge-all   { background:rgba(251,191,36,.1);  color:var(--warning);    border:1px solid rgba(251,191,36,.2); }
 
 /* subs */
 .sub-item { display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid rgba(120,100,255,.08); flex-wrap:wrap; }
@@ -131,9 +131,9 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
 .log-ts  { color:var(--text-tertiary); font-size:11px; flex-shrink:0; }
 .log-dot { width:6px; height:6px; border-radius:50%; flex-shrink:0; margin-top:3px; }
 .log-msg { flex:1; color:var(--text-secondary); word-break:break-all; }
-.c-var{color:var(--blue-light)} .c-vs{color:var(--success)} .c-event{color:var(--warning)}
+.c-var{color:var(--blue-light)} .c-vs{color:var(--success)} .c-all{color:var(--warning)}
 .c-status{color:var(--text-tertiary);font-style:italic} .c-error{color:var(--danger)}
-.d-var{background:var(--blue)} .d-vs{background:var(--success)} .d-event{background:var(--warning)}
+.d-var{background:var(--blue)} .d-vs{background:var(--success)} .d-all{background:var(--warning)}
 .d-status{background:var(--text-tertiary)} .d-error{background:var(--danger)}
 .log-empty { text-align:center; color:var(--text-tertiary); padding:3rem 0; font-size:12px; font-family:var(--font); }
 
@@ -163,7 +163,8 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
   2. On "Connect", the SDK creates a signed WebSocket connection to the
      Anedya streaming endpoint.
   3. You can subscribe to specific variable updates, value store key
-     changes, or catch all events from the stream.
+     changes, or catch ALL messages (both variable and value store)
+     from the stream.
   4. Each subscription gives you a handle to pause, resume, or cancel
      it independently. There's also a global pause/resume for all.
 
@@ -236,7 +237,8 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
     Three stat cards that update in real time as messages arrive:
     - Variable updates: fired by stream.onVariable() callbacks
     - Value store updates: fired by stream.onValueStore() callbacks
-    - Events (catch-all): fired by stream.onEvent() callbacks
+    - All messages (catch-all): fired by stream.onAllMessages() callbacks,
+      for both variable AND value store frames
     Each card flashes purple briefly when a new message arrives.
   -->
   <div class="grid-3">
@@ -250,10 +252,10 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
       <div class="stat-value" id="cnt-vs">0</div>
       <div class="stat-sub" id="last-vs">waiting…</div>
     </div>
-    <div class="stat" id="stat-ev">
-      <div class="stat-label">Events (catch-all)</div>
-      <div class="stat-value" id="cnt-ev">0</div>
-      <div class="stat-sub" id="last-ev">waiting…</div>
+    <div class="stat" id="stat-all">
+      <div class="stat-label">All messages (catch-all)</div>
+      <div class="stat-value" id="cnt-all">0</div>
+      <div class="stat-sub" id="last-all">waiting…</div>
     </div>
   </div>
 
@@ -274,12 +276,15 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
          - Useful for watching config values or thresholds that
            change at runtime (e.g. "threshold", "setpoint").
 
-      3. CATCH-ALL EVENT listener (stream.onEvent)
-         - Fires for every variable message regardless of name.
+      3. CATCH-ALL listener (stream.onAllMessages)
+         - Fires for EVERY incoming message regardless of type —
+           both variable messages and value store messages.
+         - Each delivered object carries a `kind` field
+           ("variable" or "valuestore") so you can tell them apart.
          - Good for logging everything or building a generic handler.
 
       Each subscription row shows:
-      - The subscription type badge (variable / value store / event)
+      - The subscription type badge (variable / value store / all)
       - The key name being watched
       - The last received value (flashes on update)
       - A message count
@@ -307,10 +312,10 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
         </div>
       </div>
 
-      <!-- Catch-all event listener (no key needed — listens to everything) -->
+      <!-- Catch-all listener (no key needed — listens to everything, both variable and value store frames) -->
       <div class="field" style="margin-bottom:0">
-        <div class="field-label">Catch-all events</div>
-        <button class="btn btn-sm" id="btn-add-ev"><i class="ti ti-plus"></i> Add listener</button>
+        <div class="field-label">Catch-all (all messages)</div>
+        <button class="btn btn-sm" id="btn-add-all"><i class="ti ti-plus"></i> Add listener</button>
       </div>
 
       <div class="divider"></div>
@@ -350,7 +355,7 @@ input[type=text]::placeholder { color:var(--text-tertiary); }
       - SDK method calls (what your code is doing)
       - Incoming variable values (blue)
       - Incoming value store updates (green)
-      - Catch-all events (amber)
+      - All messages catch-all hits (amber)
       - Connection status changes (grey italic)
       - Errors (red)
       Messages are colour-coded by type for quick scanning.
@@ -458,7 +463,7 @@ function saveCreds() {
 // subId       — auto-incrementing ID used to identify each subscription row
 let stream = null;
 let globalPaused = false;
-let varCount = 0, vsCount = 0, evCount = 0;
+let varCount = 0, vsCount = 0, allCount = 0;
 let subs = [], subId = 0;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -466,11 +471,11 @@ let subs = [], subId = 0;
 // ═══════════════════════════════════════════════════════════════════
 // Each log entry has a timestamp, a coloured dot, and a message.
 // The type determines the colour — 'var' = blue, 'vs' = green,
-// 'event' = amber, 'status' = grey, 'error' = red.
+// 'all' = amber, 'status' = grey, 'error' = red.
 const LOG_MAP = {
   var:    { dot:'d-var',    cls:'c-var'    },
   vs:     { dot:'d-vs',     cls:'c-vs'     },
-  event:  { dot:'d-event',  cls:'c-event'  },
+  all:    { dot:'d-all',    cls:'c-all'    },
   status: { dot:'d-status', cls:'c-status' },
   error:  { dot:'d-error',  cls:'c-error'  },
 };
@@ -549,14 +554,14 @@ function renderSubs() {
       return;
     }
     // New row — create and append it (counters start at 0 only for new subs)
-    const bc = { variable:'badge-var', valuestore:'badge-vs', event:'badge-event' }[s.type];
-    const bl = { variable:'variable',  valuestore:'value store', event:'event' }[s.type];
+    const bc = { variable:'badge-var', valuestore:'badge-vs', all:'badge-all' }[s.type];
+    const bl = { variable:'variable',  valuestore:'value store', all:'all messages' }[s.type];
     const row = document.createElement('div');
     row.className = `sub-item ${s.paused ? 'paused' : ''}`;
     row.id = `sr-${s.id}`;
     row.innerHTML = `
       <span class="badge ${bc}">${bl}</span>
-      <span class="sub-name">${s.key || 'all events'}</span>
+      <span class="sub-name">${s.key || 'all messages'}</span>
       <span class="sub-val" id="sv-${s.id}">—</span>
       <span class="sub-cnt" id="sc-${s.id}">0</span>
       <button class="btn btn-sm" id="sp-${s.id}" data-pause="${s.id}">${s.paused ? 'Resume' : 'Pause'}</button>
@@ -597,7 +602,7 @@ document.getElementById('sub-list').addEventListener('click', e => {
 
 // Pauses or resumes a single subscription.
 // sub.handle.pause() / .resume() are methods on the IStreamSubscription
-// object returned by stream.onVariable() / onValueStore() / onEvent().
+// object returned by stream.onVariable() / onValueStore() / onAllMessages().
 // Pausing a subscription stops its callback from firing, but the
 // WebSocket connection and all other subscriptions are unaffected.
 function togglePause(id) {
@@ -608,7 +613,7 @@ function togglePause(id) {
   document.getElementById(`sr-${id}`)?.classList.toggle('paused', s.paused);
   const btn = document.getElementById(`sp-${id}`);
   if (btn) btn.textContent = s.paused ? 'Resume' : 'Pause';
-  log(`"${s.key || 'events'}" ${s.paused ? 'paused' : 'resumed'}`);
+  log(`"${s.key || 'all messages'}" ${s.paused ? 'paused' : 'resumed'}`);
 }
 
 // Permanently cancels a subscription via sub.handle.cancel().
@@ -619,7 +624,7 @@ function cancelSub(id) {
   if (!s) return;
   s.handle.cancel();
   s.active = false;
-  log(`Subscription "${s.key || 'events'}" cancelled`);
+  log(`Subscription "${s.key || 'all messages'}" cancelled`);
   renderSubs();
 }
 
@@ -672,7 +677,7 @@ async function doConnect() {
   // Step 5 — Create the stream using the stream ID and URL from the inputs.
 
   stream = anedya.NewStream(client, node, c.sid, c.url);
-  console.log(c?.sid,"check stream id")
+
 
   // Step 6 — Register global listeners before connecting.
   stream.onStatus(s => {
@@ -688,7 +693,7 @@ async function doConnect() {
   subs.filter(s => s.active).forEach(s => {
     if (s.type === 'variable')   s.handle = stream.onVariable(s.key, makeVarCb(s));
     if (s.type === 'valuestore') s.handle = stream.onValueStore(s.key, makeVSCb(s));
-    if (s.type === 'event')      s.handle = stream.onEvent(makeEvCb(s));
+    if (s.type === 'all')        s.handle = stream.onAllMessages(makeAllCb(s));
   });
 
   // Step 8 — Open the WebSocket connection.
@@ -735,17 +740,23 @@ function makeVSCb(s) {
   };
 }
 
-// Called by stream.onEvent(cb) for every incoming variable message,
-// regardless of variable name. Useful as a catch-all logger or
-// for building generic handlers that don't care about the variable name.
-function makeEvCb(s) {
+// Called by stream.onAllMessages(cb) for EVERY incoming message —
+// both variable messages and value store messages, regardless of
+// variable name or key. data.kind tells you which shape you got:
+// "variable" (has data.variable) or "valuestore" (has data.key).
+function makeAllCb(s) {
   return (data) => {
-    evCount++;
-    document.getElementById('cnt-ev').textContent = evCount;
-    document.getElementById('last-ev').textContent = `${data.variable} · ${ts()}`;
-    flash('stat-ev');
+    allCount++;
+    document.getElementById('cnt-all').textContent = allCount;
+    const label = data.kind === 'variable' ? data.variable : data.key;
+    document.getElementById('last-all').textContent = `${label} · ${ts()}`;
+    flash('stat-all');
     incSub(s.id, data.value);
-    log(`stream.onEvent() → <strong class="c-event">${data.variable}</strong> = ${JSON.stringify(data.value)}`, 'event');
+    if (data.kind === 'variable') {
+      log(`stream.onAllMessages() → variable <strong class="c-all">${data.variable}</strong> = ${JSON.stringify(data.value)}`, 'all');
+    } else {
+      log(`stream.onAllMessages() → valuestore <strong class="c-all">${data.key}</strong> = ${JSON.stringify(data.value)}`, 'all');
+    }
   };
 }
 
@@ -842,20 +853,21 @@ document.getElementById('btn-add-vs').addEventListener('click', () => {
   renderSubs();
 });
 
-// ── Add catch-all event listener ───────────────────────────────────
-// stream.onEvent(callback) → IStreamSubscription
-// Fires for every variable message on the stream, regardless of name.
-// Multiple onEvent listeners can be registered — all will fire.
-document.getElementById('btn-add-ev').addEventListener('click', () => {
+// ── Add catch-all listener ──────────────────────────────────────────
+// stream.onAllMessages(callback) → IStreamSubscription
+// Fires for EVERY message on the stream — both variable and value
+// store frames, regardless of name/key. Multiple onAllMessages
+// listeners can be registered — all will fire.
+document.getElementById('btn-add-all').addEventListener('click', () => {
   const id = ++subId;
-  const s = { id, type: 'event', key: null, paused: false, active: true, handle: null };
+  const s = { id, type: 'all', key: null, paused: false, active: true, handle: null };
   if (stream) {
-    s.handle = stream.onEvent(makeEvCb(s));
+    s.handle = stream.onAllMessages(makeAllCb(s));
   } else {
     s.handle = { pause: () => { s.paused = true; }, resume: () => { s.paused = false; }, cancel: () => { s.active = false; } };
   }
   subs.push(s);
-  log('Subscribed → stream.onEvent()');
+  log('Subscribed → stream.onAllMessages()');
   renderSubs();
 });
 

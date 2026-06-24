@@ -21,24 +21,24 @@ var AnedyaSDK = (() => {
   // dist/index.mjs
   var index_exports = {};
   __export(index_exports, {
-    Anedya: () => V,
+    Anedya: () => E,
     AnedyaDataType: () => X,
-    AnedyaDeleteKeyReq: () => k,
+    AnedyaDeleteKeyReq: () => T,
     AnedyaDeleteKeyResp: () => S,
     AnedyaError: () => K,
     AnedyaGetDataReq: () => C,
     AnedyaGetDataResp: () => m,
     AnedyaGetDeviceStatusResp: () => A,
-    AnedyaGetKeyReq: () => T,
-    AnedyaGetKeyResp: () => g,
+    AnedyaGetKeyReq: () => N,
+    AnedyaGetKeyResp: () => b,
     AnedyaGetLatestDataResp: () => h,
-    AnedyaGetSnapshotReq: () => E,
+    AnedyaGetSnapshotReq: () => V,
     AnedyaGetSnapshotResp: () => I,
     AnedyaScanKeysReq: () => x,
     AnedyaScanKeysResp: () => f,
     AnedyaScope: () => z,
-    AnedyaSetKeyReq: () => N,
-    AnedyaSetKeyResp: () => b,
+    AnedyaSetKeyReq: () => k,
+    AnedyaSetKeyResp: () => g,
     getAnedyaErrorMessage: () => j
   });
 
@@ -2334,14 +2334,14 @@ var AnedyaSDK = (() => {
     }
   };
   var C = class {
-    constructor(e, r, t, o = 1e4, n = "desc") {
+    constructor(e, r, t, n = 1e4, o = "desc") {
       this.variable = e;
       this.from = r;
       this.to = t;
-      this.limit = o;
-      this.order = n;
-      if (n !== "asc" && n !== "desc") throw new Error("Invalid order value. It should be either 'asc' or 'desc'.");
-      if (o < 1) throw new Error("Invalid limit value. It should be at least 1.");
+      this.limit = n;
+      this.order = o;
+      if (o !== "asc" && o !== "desc") throw new Error("Invalid order value. It should be either 'asc' or 'desc'.");
+      if (n < 1) throw new Error("Invalid limit value. It should be at least 1.");
       if (r > t) throw new Error("Invalid time range. 'from' should be less than or equal to 'to'.");
     }
   };
@@ -2366,31 +2366,31 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" }, this.isDataAvailable = false, this.data = null;
     }
   };
-  var N = class {
-    constructor(e, r, t, o) {
+  var k = class {
+    constructor(e, r, t, n) {
       this.namespace = e;
       this.key = r;
       this.value = t;
-      this.type = o;
+      this.type = n;
       if (this.namespace.scope !== "global" && this.namespace.scope !== "node") throw new Error("Invalid namespace scope. It should be either 'global' or 'node'.");
       if (this.type !== "string" && this.type !== "binary" && this.type !== "float" && this.type !== "boolean") throw new Error("Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'.");
     }
   };
-  var b = class {
+  var g = class {
     isSuccess;
     error;
     constructor() {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" };
     }
   };
-  var T = class {
+  var N = class {
     constructor(e, r) {
       this.namespace = e;
       this.key = r;
       if (this.namespace.scope !== "global" && this.namespace.scope !== "node") throw new Error("Invalid namespace scope. It should be either 'global' or 'node'.");
     }
   };
-  var g = class {
+  var b = class {
     isSuccess;
     error;
     namespace;
@@ -2404,7 +2404,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" }, this.namespace = { scope: "", id: "" }, this.key = "", this.value = void 0, this.type = "", this.size = 0, this.modified = 0, this.created = 0;
     }
   };
-  var k = class {
+  var T = class {
     constructor(e, r) {
       this.namespace = e;
       this.key = r;
@@ -2419,12 +2419,12 @@ var AnedyaSDK = (() => {
     }
   };
   var x = class {
-    constructor(e, r, t, o, n) {
+    constructor(e, r, t, n, o) {
       this.filter = e;
       this.orderby = r;
       this.order = t;
-      this.limit = o;
-      this.offset = n;
+      this.limit = n;
+      this.offset = o;
       if (this.filter.namespace.scope !== "global" && this.filter.namespace.scope !== "node") throw new Error("Invalid namespace scope. It should be either 'global' or 'node'.");
     }
   };
@@ -2447,7 +2447,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" }, this.data = void 0;
     }
   };
-  var E = class {
+  var V = class {
     constructor(e, r) {
       this.time = e;
       this.variable = r;
@@ -2470,19 +2470,19 @@ var AnedyaSDK = (() => {
     try {
       let t;
       c == null ? t = new Uint8Array() : t = new TextEncoder().encode(JSON.stringify(c));
-      let o = await crypto.subtle.digest("SHA-256", t), n = new Uint8Array(o), l = new Uint8Array(8);
+      let n = await crypto.subtle.digest("SHA-256", t), o = new Uint8Array(n), l = new Uint8Array(8);
       new DataView(l.buffer).setBigUint64(0, BigInt(r), false);
-      let y = new Uint8Array(n.length + l.length + e.signatureVersionBytes.length + e.tokenBytes.length);
-      y.set(n, 0), y.set(l, n.length), y.set(e.signatureVersionBytes, n.length + l.length), y.set(e.tokenBytes, n.length + l.length + e.signatureVersionBytes.length);
+      let y = new Uint8Array(o.length + l.length + e.signatureVersionBytes.length + e.tokenBytes.length);
+      y.set(o, 0), y.set(l, o.length), y.set(e.signatureVersionBytes, o.length + l.length), y.set(e.tokenBytes, o.length + l.length + e.signatureVersionBytes.length);
       let u = await crypto.subtle.digest("SHA-256", y);
       return Array.from(new Uint8Array(u)).map((d) => d.toString(16).padStart(2, "0")).join("");
     } catch {
     }
   };
-  var _ = async (c, e, r, t) => {
-    let o = `${c}/data/getData`, n = { nodes: r, variable: t.variable, from: Math.floor(t.from / 1e3), to: Math.floor(t.to / 1e3), limit: t.limit, order: t.order }, l = Math.floor(Date.now() / 1e3), y = await p(n, e, l);
+  var M = async (c, e, r, t) => {
+    let n = `${c}/data/getData`, o = { nodes: r, variable: t.variable, from: Math.floor(t.from / 1e3), to: Math.floor(t.to / 1e3), limit: t.limit, order: t.order }, l = Math.floor(Date.now() / 1e3), y = await p(o, e, l);
     try {
-      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(o, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(n) }), s = new m();
+      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(n, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(o) }), s = new m();
       try {
         let a = await d.json();
         if (s.isSuccess = a.success, s.error.errorMessage = a.error, s.error.reasonCode = a.reasonCode, s.isDataAvailable = false, s.data = null, a.success) {
@@ -2497,10 +2497,10 @@ var AnedyaSDK = (() => {
       throw console.error("Error during Get data request:", u), u;
     }
   };
-  var G = async (c, e, r, t) => {
-    let o = `${c}/data/latest`, n = { nodes: r, variable: t.variable }, l = Math.floor(Date.now() / 1e3), y = await p(n, e, l);
+  var _ = async (c, e, r, t) => {
+    let n = `${c}/data/latest`, o = { nodes: r, variable: t.variable }, l = Math.floor(Date.now() / 1e3), y = await p(o, e, l);
     try {
-      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(o, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(n) }), s = new h();
+      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(n, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(o) }), s = new h();
       try {
         let a = await d.json();
         if (s.isSuccess = a.success, s.error.errorMessage = a.error, s.error.reasonCode = a.reasonCode, s.isDataAvailable = false, s.data = null, a.success) {
@@ -2515,12 +2515,12 @@ var AnedyaSDK = (() => {
       throw console.error("Error during get latest data request:", u), u;
     }
   };
-  var M = async (c, e, r, t) => {
-    let o = `${c}/valuestore/setValue`, n;
-    t.namespace.scope === "node" ? n = r[0] : n = t.namespace.id;
-    let l = { namespace: { scope: t.namespace.scope, id: n }, key: t.key, value: t.value, type: t.type }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
+  var G = async (c, e, r, t) => {
+    let n = `${c}/valuestore/setValue`, o;
+    t.namespace.scope === "node" ? o = r[0] : o = t.namespace.id;
+    let l = { namespace: { scope: t.namespace.scope, id: o }, key: t.key, value: t.value, type: t.type }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new b();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(n, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new g();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a;
@@ -2532,11 +2532,11 @@ var AnedyaSDK = (() => {
     }
   };
   var U = async (c, e, r, t) => {
-    let o = `${c}/valuestore/getValue`, n;
-    t.namespace.scope === "node" ? n = r[0] : n = t.namespace.id;
-    let l = { namespace: { scope: t.namespace.scope, id: n }, key: t.key }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
+    let n = `${c}/valuestore/getValue`, o;
+    t.namespace.scope === "node" ? o = r[0] : o = t.namespace.id;
+    let l = { namespace: { scope: t.namespace.scope, id: o }, key: t.key }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new g();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(n, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new b();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a.namespace = i.namespace, a.key = i.key, a.value = i.value, a.type = i.type, a.size = i.size, a.modified = i.modified, a.created = i.created, a;
@@ -2548,11 +2548,11 @@ var AnedyaSDK = (() => {
     }
   };
   var O = async (c, e, r, t) => {
-    let o = `${c}/valuestore/delete`, n;
-    t.namespace.scope === "node" ? n = r[0] : n = t.namespace.id;
-    let l = { namespace: { scope: t.namespace.scope, id: n }, key: t.key }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
+    let n = `${c}/valuestore/delete`, o;
+    t.namespace.scope === "node" ? o = r[0] : o = t.namespace.id;
+    let l = { namespace: { scope: t.namespace.scope, id: o }, key: t.key }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new S();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(n, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new S();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a;
@@ -2564,11 +2564,11 @@ var AnedyaSDK = (() => {
     }
   };
   var q = async (c, e, r, t) => {
-    let o = `${c}/valuestore/scan`, n;
-    t.filter.namespace.scope === "node" ? n = r[0] : n = t.filter.namespace.id;
-    let l = { filter: { namespace: { scope: t.filter.namespace.scope, id: n } }, orderby: t.orderby, order: t.order, limit: t.limit, offset: t.offset }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
+    let n = `${c}/valuestore/scan`, o;
+    t.filter.namespace.scope === "node" ? o = r[0] : o = t.filter.namespace.id;
+    let l = { filter: { namespace: { scope: t.filter.namespace.scope, id: o } }, orderby: t.orderby, order: t.order, limit: t.limit, offset: t.offset }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new f();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(n, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new f();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a.count = i.count, a.totalCount = i.totalCount, a.data = i.data, a.next = i.next, a;
@@ -2580,9 +2580,9 @@ var AnedyaSDK = (() => {
     }
   };
   var P = async (c, e, r, t) => {
-    let o = `${c}/health/status`, n = { nodes: r, lastContactThreshold: t }, l = Math.floor(Date.now() / 1e3), y = await p(n, e, l);
+    let n = `${c}/health/status`, o = { nodes: r, lastContactThreshold: t }, l = Math.floor(Date.now() / 1e3), y = await p(o, e, l);
     try {
-      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(o, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(n) }), s = new A();
+      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(n, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(o) }), s = new A();
       try {
         let a = await d.json();
         return s.isSuccess = a.success, s.error.errorMessage = a.error, s.error.reasonCode = a.reasonCode, s.isSuccess && (r.length === 1 ? s.data = a.data[r[0]] : s.data = a.data), s;
@@ -2594,9 +2594,9 @@ var AnedyaSDK = (() => {
     }
   };
   var B = async (c, e, r, t) => {
-    let o = `${c}/data/snapshot`, n = { nodes: r, time: t?.time, variable: t?.variable }, l = Math.floor(Date.now() / 1e3), y = await p(n, e, l);
+    let n = `${c}/data/snapshot`, o = { nodes: r, time: t?.time, variable: t?.variable }, l = Math.floor(Date.now() / 1e3), y = await p(o, e, l);
     try {
-      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(o, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(n) }), s = new I();
+      let u = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": l.toString(), "X-Anedya-Signature": y, "Content-Type": "application/json" }, d = await fetch(n, { method: "POST", credentials: "same-origin", headers: u, body: JSON.stringify(o) }), s = new I();
       try {
         let a = await d.json();
         return s.isSuccess = a.success, s.error.errorMessage = a.error, s.error.reasonCode = a.reasonCode, s.isSuccess && (r.length === 1 ? s.data = a.data.filter((i) => i.node === r[0]) : s.data = a.data, s.count = a.count), s;
@@ -2612,21 +2612,21 @@ var AnedyaSDK = (() => {
     #t;
     #r;
     constructor(e, r) {
-      let { baseUrl: t, tokenId: o, tokenBytes: n, signatureVersionBytes: l, signatureVersion: y, authorizationMode: u } = e;
-      this.#e = r, this.#t = t, this.#r = { tokenId: o, tokenBytes: n, signatureVersion: y, signatureVersionBytes: l, authorizationMode: u };
+      let { baseUrl: t, tokenId: n, tokenBytes: o, signatureVersionBytes: l, signatureVersion: y, authorizationMode: u } = e;
+      this.#e = r, this.#t = t, this.#r = { tokenId: n, tokenBytes: o, signatureVersion: y, signatureVersionBytes: l, authorizationMode: u };
     }
     getNodeId() {
       return this.#e;
     }
     async getData(e) {
-      return await _(this.#t, this.#r, [this.#e], e);
+      return await M(this.#t, this.#r, [this.#e], e);
     }
     async getLatestData(e) {
       let r = { variable: e };
-      return await G(this.#t, this.#r, [this.#e], r);
+      return await _(this.#t, this.#r, [this.#e], r);
     }
     async setKey(e) {
-      return await M(this.#t, this.#r, [this.#e], e);
+      return await G(this.#t, this.#r, [this.#e], e);
     }
     async getKey(e) {
       return await U(this.#t, this.#r, [this.#e], e);
@@ -2657,23 +2657,23 @@ var AnedyaSDK = (() => {
     subCounter = 0;
     variableSubs = [];
     valueStoreSubs = [];
-    eventSubs = [];
+    allMessagesSubs = [];
     errorListeners = [];
     statusListeners = [];
-    constructor(e, r, t, o) {
-      let { tokenId: n, tokenBytes: l, signatureVersion: y, signatureVersionBytes: u, authorizationMode: d } = e;
-      this.node = r, this.streamId = t, this.streamUrl = o, this.configHeaders = { tokenId: n, tokenBytes: l, signatureVersion: y, signatureVersionBytes: u, authorizationMode: d };
+    constructor(e, r, t, n) {
+      let { tokenId: o, tokenBytes: l, signatureVersion: y, signatureVersionBytes: u, authorizationMode: d } = e;
+      this.node = r, this.streamId = t, this.streamUrl = n, this.configHeaders = { tokenId: o, tokenBytes: l, signatureVersion: y, signatureVersionBytes: u, authorizationMode: d };
     }
     async connect() {
       if (this.isConnected || this.destroyed) return;
       let e = Math.floor(Date.now() / 1e3), r = await p(null, this.configHeaders, e), t = new URL(this.streamUrl);
       t.searchParams.set("Authorization", this.configHeaders.authorizationMode), t.searchParams.set("x-anedya-streamid", this.streamId), t.searchParams.set("x-anedya-tokenid", this.configHeaders.tokenId), t.searchParams.set("x-anedya-signature", r), t.searchParams.set("x-anedya-timestamp", e.toString()), t.searchParams.set("x-anedya-signatureversion", this.configHeaders.signatureVersion), this.ws = new WebSocket(t.toString()), this.ws.binaryType = "arraybuffer", this.ws.onopen = () => {
         this.isConnected = true, this.reconnectAttempts = 0, this.emitStatus("connected");
-      }, this.ws.onmessage = (o) => {
-        this.handleRawMessage(new Uint8Array(o.data));
-      }, this.ws.onerror = (o) => {
-        this.errorListeners.forEach((n) => n(o));
-      }, this.ws.onclose = (o) => {
+      }, this.ws.onmessage = (n) => {
+        this.handleRawMessage(new Uint8Array(n.data));
+      }, this.ws.onerror = (n) => {
+        this.errorListeners.forEach((o) => o(n));
+      }, this.ws.onclose = (n) => {
         this.isConnected = false, this.emitStatus("disconnected"), this.destroyed || this.scheduleReconnect();
       };
     }
@@ -2694,9 +2694,9 @@ var AnedyaSDK = (() => {
       let t = { id: this.nextId(), key: e, callback: r, paused: false, active: true };
       return this.valueStoreSubs.push(t), this.makeHandle(t);
     }
-    onEvent(e) {
+    onAllMessages(e) {
       let r = { id: this.nextId(), callback: e, paused: false, active: true };
-      return this.eventSubs.push(r), this.makeHandle(r);
+      return this.allMessagesSubs.push(r), this.makeHandle(r);
     }
     onError(e) {
       this.errorListeners.push(e);
@@ -2709,23 +2709,23 @@ var AnedyaSDK = (() => {
         console.warn("Invalid message: too short");
         return;
       }
-      let r = e[0], t = e[1], o = e[2];
-      r === 0 && t === 2 ? this.routeValueStore(e.slice(2)) : r === 0 && t === 1 ? this.routeVariableOrEvent(e.slice(3), o) : console.warn("Unknown message type:", r, t);
+      let r = e[0], t = e[1], n = e[2];
+      r === 0 && t === 2 ? this.routeValueStore(e.slice(2)) : r === 0 && t === 1 ? this.routeVariableOrEvent(e.slice(3), n) : console.warn("Unknown message type:", r, t);
     }
     routeValueStore(e) {
       try {
-        let r = decode(e), t = { nodeId: r?.ns?.id ? Array.from(r.ns.id).map((o) => o.toString(16).padStart(2, "0")).join("") : void 0, scope: r?.ns?.scope, key: r?.key, value: r?.val, timestamp: r?.ts, type: r?.t };
+        let r = decode(e), t = { nodeId: r?.ns?.id ? Array.from(r.ns.id).map((n) => n.toString(16).padStart(2, "0")).join("") : void 0, scope: r?.ns?.scope, key: r?.key, value: r?.val, timestamp: r?.ts, type: r?.t };
         if (this.globalPaused) return;
-        this.valueStoreSubs.filter((o) => o.active && !o.paused && o.key === t.key).forEach((o) => o.callback(t));
+        this.valueStoreSubs.filter((n) => n.active && !n.paused && n.key === t.key).forEach((n) => n.callback(t)), this.allMessagesSubs.filter((n) => n.active && !n.paused).forEach((n) => n.callback({ ...t, kind: "valuestore" }));
       } catch (r) {
         console.error("\u274C ValueStore decode error:", r);
       }
     }
     routeVariableOrEvent(e, r) {
       try {
-        let t = decode(e), o = { nodeId: t?.n ? Array.from(t.n).map((n) => n.toString(16).padStart(2, "0")).join("") : void 0, variable: t?.v, value: t?.d, timestamp: t?.ts, dataType: r };
+        let t = decode(e), n = { nodeId: t?.n ? Array.from(t.n).map((o) => o.toString(16).padStart(2, "0")).join("") : void 0, variable: t?.v, value: t?.d, timestamp: t?.ts, dataType: r };
         if (this.globalPaused) return;
-        this.variableSubs.filter((n) => n.active && !n.paused && n.variableId === o.variable).forEach((n) => n.callback(o)), this.eventSubs.filter((n) => n.active && !n.paused).forEach((n) => n.callback(o));
+        this.variableSubs.filter((o) => o.active && !o.paused && o.variableId === n.variable).forEach((o) => o.callback(n)), this.allMessagesSubs.filter((o) => o.active && !o.paused).forEach((o) => o.callback({ ...n, kind: "variable" }));
       } catch (t) {
         console.error("Variable decode error:", t);
       }
@@ -2753,7 +2753,7 @@ var AnedyaSDK = (() => {
       } };
     }
   };
-  var V = class {
+  var E = class {
     NewConfig(e, r) {
       return new w(e, r);
     }
@@ -2763,12 +2763,12 @@ var AnedyaSDK = (() => {
     NewNode(e, r) {
       return new R(e, r);
     }
-    NewStream(e, r, t, o) {
-      return new D(e, r, t, o);
+    NewStream(e, r, t, n) {
+      return new D(e, r, t, n);
     }
   };
   var z = ((r) => (r.GLOBAL = "global", r.NODE = "node", r))(z || {});
-  var X = ((o) => (o.STRING = "string", o.BINARY = "binary", o.FLOAT = "float", o.BOOLEAN = "boolean", o))(X || {});
+  var X = ((n) => (n.STRING = "string", n.BINARY = "binary", n.FLOAT = "float", n.BOOLEAN = "boolean", n))(X || {});
   var K = { Success: -1, Unknown: 0, Failure: 1, HttpRequestError: 3, HttpRequestTimeout: 4, keyNotFound: 5 };
   function j(c) {
     return Object.fromEntries(Object.entries(K).map(([r, t]) => [t, r]))[c] || "UnknownErrorCode";

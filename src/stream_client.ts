@@ -29,12 +29,15 @@ export interface ValueStoreData {
   type: any;
 }
 
-// Events share the same shape as variable data
-export type EventData = VariableData;
+// Messages delivered to onAllMessages() can be either shape — distinguish
+// using the `kind` discriminant added at dispatch time.
+export type AllMessagesData =
+  | (VariableData & { kind: "variable" })
+  | (ValueStoreData & { kind: "valuestore" });
 
 type VariableCallback = (data: VariableData) => void;
 type ValueStoreCallback = (data: ValueStoreData) => void;
-type EventCallback = (data: EventData) => void;
+type AllMessagesCallback = (data: AllMessagesData) => void;
 type ErrorCallback = (err: any) => void;
 type StatusCallback = (status: "connected" | "disconnected" | "reconnecting") => void;
 
@@ -56,9 +59,9 @@ interface ValueStoreSub {
   active: boolean;
 }
 
-interface EventSub {
+interface AllMessagesSub {
   id: string;
-  callback: EventCallback;
+  callback: AllMessagesCallback;
   paused: boolean;
   active: boolean;
 }
@@ -84,6 +87,15 @@ interface EventSub {
  *   vsSub.cancel();                     // one-shot: cancel after first hit
  * });
  *
+ * // Fires for EVERY incoming message — both variable and value store frames.
+ * const allSub = stream.onAllMessages((data) => {
+ *   if (data.kind === "variable") {
+ *     //console.log("variable:", data.variable, data.value);
+ *   } else {
+ *     //console.log("valuestore:", data.key, data.value);
+ *   }
+ * });
+ *
  * await stream.connect();
  * ```
  */
@@ -102,7 +114,7 @@ export class AnedyaStreamClient {
 
   private variableSubs: VariableSub[] = [];
   private valueStoreSubs: ValueStoreSub[] = [];
-  private eventSubs: EventSub[] = [];
+  private allMessagesSubs: AllMessagesSub[] = [];
   private errorListeners: ErrorCallback[] = [];
   private statusListeners: StatusCallback[] = [];
 
@@ -254,27 +266,35 @@ export class AnedyaStreamClient {
   }
 
   /**
-   * Subscribe to ALL incoming variable/event messages regardless of variable ID.
-   * Useful for debugging or generic handlers.
+   * Subscribe to ALL incoming messages on the stream — both variable
+   * messages and value store messages — regardless of variable name or key.
+   * Useful for debugging or generic handlers that need to see everything.
    *
-   * @param callback  Receives EventData on every 0x00 0x01 message
+   * Each delivered object carries a `kind` discriminant so you can tell
+   * which shape you got: `"variable"` (VariableData) or `"valuestore"` (ValueStoreData).
+   *
+   * @param callback  Receives AllMessagesData on every incoming message
    * @returns         IStreamSubscription — call .pause() / .resume() / .cancel() on it
    *
    * @example
    * ```ts
-   * const sub = stream.onEvent((data) => {
-   *   //console.log("Event from node:", data.nodeId, "variable:", data.variable);
+   * const sub = stream.onAllMessages((data) => {
+   *   if (data.kind === "variable") {
+   *     //console.log("Variable from node:", data.nodeId, data.variable, data.value);
+   *   } else {
+   *     //console.log("Value store from node:", data.nodeId, data.key, data.value);
+   *   }
    * });
    * ```
    */
-  onEvent(callback: EventCallback): IStreamSubscription {
-    const sub: EventSub = {
+  onAllMessages(callback: AllMessagesCallback): IStreamSubscription {
+    const sub: AllMessagesSub = {
       id: this.nextId(),
       callback,
       paused: false,
       active: true,
     };
-    this.eventSubs.push(sub);
+    this.allMessagesSubs.push(sub);
     return this.makeHandle(sub);
   }
 
@@ -337,6 +357,12 @@ private routeValueStore(payload: Uint8Array) {
     this.valueStoreSubs
       .filter((s) => s.active && !s.paused && s.key === data.key)
       .forEach((s) => s.callback(data));
+
+    // Catch-all subscribers also receive value store messages, tagged so
+    // callers can tell them apart from variable messages.
+    this.allMessagesSubs
+      .filter((s) => s.active && !s.paused)
+      .forEach((s) => s.callback({ ...data, kind: "valuestore" }));
   } catch (err) {
     console.error("❌ ValueStore decode error:", err);
   }
@@ -363,10 +389,10 @@ private routeValueStore(payload: Uint8Array) {
         .filter((s) => s.active && !s.paused && s.variableId === data.variable)
         .forEach((s) => s.callback(data));
 
-      // Catch-all event subscribers
-      this.eventSubs
+      // Catch-all subscribers
+      this.allMessagesSubs
         .filter((s) => s.active && !s.paused)
-        .forEach((s) => s.callback(data));
+        .forEach((s) => s.callback({ ...data, kind: "variable" }));
     } catch (err) {
       console.error("Variable decode error:", err);
     }

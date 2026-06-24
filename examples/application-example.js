@@ -15,30 +15,23 @@ const {
   AnedyaGetKeyResp,
   AnedyaDeleteKeyResp,
   AnedyaGetDeviceStatusResp,
-    AnedyaStreamClient, 
 } = require("@anedyasystems/anedya-frontend-sdk");
 
-// Your Anedya credentials
-// const tokenId = "lsWa9iOl1XWW2ACpvI9Nlx3w";
-// const token = "gP6iJf4hcUmoi24lyjLsaIxRw4UuF7wEGah9Fa1qOCnaNjvhohoYvNDf13AU25d1";
-// const NodeId = "20deeee8-f8ae-11ee-9dd8-c3aa61afe2fb";
-// const variableIdentifier = "temperature";
-// const streamId="019d3dbe-f14f-7365-b339-bcefbcc848a0"
-// const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 
-const streamId="019ed381-8fd6-706e-8d7b-a0e93312c865"
-const streamUrl="wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
-const tokenId="1LoygvNpcfieJOhsKiKkmPaV"
-const token="uardIpoF2nIDEa0SB1Uoeii51Jgt8WOqFUt5vnNlESmIUEj1mYEOBTyamC08VmuX"
-const variableIdentifier="stream-test"
-const nodeId="019ed37e-c9f9-7c0a-a20e-c24520e5d41f"
+const streamId           = ""
+const streamUrl          = ""
+const tokenId            = ""
+const token              = ""
+const nodeId             = ""
+const variableIdentifier = ""
+const valueStoreKey      = ""
 
 // Initialize Anedya Client
 const anedya = new Anedya();
 const connect_config = anedya.NewConfig(tokenId, token);
 const client = anedya.NewClient(connect_config);
-const node_1 = anedya.NewNode(client, NodeId);
-const stream = new AnedyaStreamClient(client, node_1, streamId, streamUrl);
+const node_1 = anedya.NewNode(client, nodeId);
+const stream = anedya.NewStream(client, node_1, streamId, streamUrl);
 
 // Example function to get Node ID
 async function getNodeId() {
@@ -202,13 +195,13 @@ async function getSnapshot() {
 }
 
 
-async function testStream() {
+async function getStream() {
   // stream is created at the top of the file
 
   stream.onStatus((status) => console.log("🔌 Status:", status));
   stream.onError((err) => console.error("Error:", err));
 
-  const tempSub = stream.onVariable("temperature", (data) => {
+  const tempSub = stream.onVariable(variableIdentifier, (data) => {
     console.log("🌡️ Temp:", data.value, "@", data.timestamp);
     if (data.value > 80) {
       tempSub.pause();
@@ -216,13 +209,19 @@ async function testStream() {
     }
   });
 
-  const thresholdSub = stream.onValueStore("threshold", (data) => {
+  const thresholdSub = stream.onValueStore(valueStoreKey, (data) => {
     //console.log("🗄️ New threshold:", data.value);
     thresholdSub.cancel();
   });
 
-  const eventSub = stream.onEvent((data) => {
-    //console.log("📡 Event:", data.variable, data.value);
+  // Fires for EVERY incoming message — both variable and value store frames.
+  // data.kind tells you which shape you got: "variable" or "valuestore".
+  const allSub = stream.onAllMessages((data) => {
+    if (data.kind === "variable") {
+      //console.log("📡 All messages → variable:", data.variable, data.value);
+    } else {
+      //console.log("📡 All messages → valuestore:", data.key, data.value);
+    }
   });
 
   await stream.connect();
@@ -234,13 +233,13 @@ async function testStream() {
 
 // Execute functions
 (async () => {
-  // await getNodeId();
-  // await getData();
-  // await getLatestData();
-  // await setKey();
-  // await getKey();
-  // await deleteKey();
-  // await scanKeys();
-  // await getDeviceStatus();
- await testStream();
+  await getNodeId();
+  await getData();
+  await getLatestData();
+  await setKey();
+  await getKey();
+  await deleteKey();
+  await scanKeys();
+  await getDeviceStatus();
+ await getStream();
 })();

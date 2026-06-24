@@ -1,415 +1,393 @@
-# AnedyaStreamClient
+# Anedya Frontend SDK
 
-A TypeScript client for receiving **live, real-time data** from the Anedya platform over a WebSocket connection. It supports subscribing to variable updates, value store changes, and raw events — with fine-grained control over each subscription.
+A JavaScript/TypeScript SDK for interacting with the [Anedya](https://anedya.io) IoT platform. It covers fetching time-series data, managing a key-value store, checking device status, and receiving live data over a WebSocket stream.
 
 ---
 
 ## Table of Contents
 
-- [Overview](#overview)
-- [Installation & Imports](#installation--imports)
-- [Quick Start](#quick-start)
-- [Constructor](#constructor)
-- [Connecting & Disconnecting](#connecting--disconnecting)
-- [Subscriptions](#subscriptions)
-  - [onVariable — Subscribe to a specific variable](#onvariable--subscribe-to-a-specific-variable)
-  - [onValueStore — Subscribe to a value store key](#onvaluestore--subscribe-to-a-value-store-key)
-  - [onEvent — Catch-all listener](#onevent--catch-all-listener)
-- [Subscription Handles — pause, resume, cancel](#subscription-handles--pause-resume-cancel)
-  - [pause()](#pause)
-  - [resume()](#resume)
-  - [cancel()](#cancel)
-  - [Example: Combining pause, resume, and cancel](#example-combining-pause-resume-and-cancel)
-- [Global pause & resume](#global-pause--resume)
-- [Error Handling](#error-handling)
-- [Connection Status](#connection-status)
-- [Reconnection Behaviour](#reconnection-behaviour)
-- [Data Types](#data-types)
-  - [VariableData](#variabledata)
-  - [ValueStoreData](#valuestoredata)
-  - [EventData](#eventdata)
-- [Full Example](#full-example)
+- [Installation](#installation)
+- [Setup](#setup)
+- [Node Methods](#node-methods)
+  - [getNodeId](#getnodeid)
+  - [getData](#getdata)
+  - [getLatestData](#getlatestdata)
+  - [getSnapshot](#getsnapshot)
+  - [setKey](#setkey)
+  - [getKey](#getkey)
+  - [deleteKey](#deletekey)
+  - [scanKeys](#scankeys)
+  - [getDeviceStatus](#getdevicestatus)
+- [Live Streaming](#live-streaming)
+  - [Setup](#stream-setup)
+  - [onVariable](#onvariable)
+  - [onValueStore](#onvaluestore)
+  - [onAllMessages](#onallmessages)
+  - [Subscription control — pause, resume, cancel](#subscription-control--pause-resume-cancel)
+  - [Global pause & resume](#global-pause--resume)
+  - [Connection status & errors](#connection-status--errors)
+  - [Reconnection](#reconnection)
+- [Data Shapes](#data-shapes)
 
 ---
 
-## Overview
+## Installation
 
-`AnedyaStreamClient` opens a WebSocket to the Anedya platform and routes incoming binary (CBOR-encoded) messages to the right subscriber callbacks. You register as many subscriptions as you need, and each one can be independently paused, resumed, or cancelled — without affecting others or the connection itself.
-
----
-
-## Installation & Imports
-
-```ts
-import { AnedyaStreamClient } from "./stream";
-import { NewClient } from "./client";
-import { NewNode } from "./node";
+```bash
+npm install @anedyasystems/anedya-frontend-sdk
 ```
 
-You also need a configured `NewClient` (holds your credentials/token) and a `NewNode` (identifies the device/node).
+---
+
+## Setup
+
+Every SDK operation starts by initialising a client and a node. Use environment variables to keep credentials out of your source code.
+
+```js
+const { Anedya } = require("@anedyasystems/anedya-frontend-sdk");
+require("dotenv").config();
+
+const anedya = new Anedya();
+const config = anedya.NewConfig(process.env.ANEDYA_TOKEN_ID, process.env.ANEDYA_TOKEN);
+const client = anedya.NewClient(config);
+const node   = anedya.NewNode(client, process.env.ANEDYA_NODE_ID);
+```
+
+`client` holds your credentials and signs every request automatically. `node` is the entry point for all data and value store operations.
 
 ---
 
-## Quick Start
+## Node Methods
 
-```ts
-// 1. Create client and node
-const client = NewClient(connectConfig);
-const node = NewNode(client, "your-node-id");
+### `getNodeId`
 
-// 2. Create the stream client
-const stream = new AnedyaStreamClient(
+Returns the node ID string this instance was created with.
+
+```js
+const id = node.getNodeId();
+```
+
+---
+
+### `getData`
+
+Fetches time-series data for a variable within a time range.
+
+```js
+const { AnedyaGetDataReq, AnedyaGetDataResp } = require("@anedyasystems/anedya-frontend-sdk");
+
+const now  = Date.now();
+const req  = new AnedyaGetDataReq("temperature", now - 86400_000, now, 100);
+const res  = await node.getData(req);
+
+if (res.isSuccess && res.isDataAvailable) {
+  console.log(res.data);
+}
+```
+
+| Parameter | Type     | Description                              |
+|-----------|----------|------------------------------------------|
+| variable  | `string` | Variable identifier                      |
+| from      | `number` | Start timestamp in **milliseconds**      |
+| to        | `number` | End timestamp in **milliseconds**        |
+| limit     | `number` | Max data points to return (default 10000)|
+
+---
+
+### `getLatestData`
+
+Returns the single most recent data point for a variable.
+
+```js
+const res = await node.getLatestData("temperature");
+
+if (res.isSuccess && res.isDataAvailable) {
+  console.log(res.data);
+}
+```
+
+---
+
+### `getSnapshot`
+
+Returns the value of a variable at a specific point in time. If no data point exists at exactly that timestamp, the nearest one **before** it is returned.
+
+```js
+const { AnedyaGetSnapshotReq } = require("@anedyasystems/anedya-frontend-sdk");
+
+const req = new AnedyaGetSnapshotReq(Math.floor(Date.now() / 1000), "temperature");
+const res = await node.getSnapshot(req);
+
+if (res.isSuccess && res.data.length > 0) {
+  console.log(res.data[0].value, res.data[0].timestamp);
+}
+```
+
+> Timestamps for `getSnapshot` are in **Unix seconds**, not milliseconds.
+
+---
+
+### `setKey`
+
+Stores a key-value pair in the value store.
+
+```js
+const { AnedyaSetKeyReq, AnedyaSetKeyResp, AnedyaScope, AnedyaDataType } = require("@anedyasystems/anedya-frontend-sdk");
+
+const req = new AnedyaSetKeyReq({ scope: AnedyaScope.NODE }, "threshold", 75, AnedyaDataType.FLOAT);
+const res = await node.setKey(req);
+
+if (res.isSuccess) console.log("Key set");
+```
+
+**Scopes:**
+
+| Scope              | Description                                      |
+|--------------------|--------------------------------------------------|
+| `AnedyaScope.NODE` | Key is local to this node only                   |
+| `AnedyaScope.GLOBAL` | Key is shared across all nodes in the account  |
+
+**Supported data types:** `STRING`, `BINARY`, `FLOAT`, `BOOLEAN`
+
+---
+
+### `getKey`
+
+Retrieves a stored value by key.
+
+```js
+const { AnedyaGetKeyReq, AnedyaGetKeyResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
+
+const req = new AnedyaGetKeyReq({ scope: AnedyaScope.NODE }, "threshold");
+const res = await node.getKey(req);
+
+if (res.isSuccess) console.log(res.data);
+```
+
+---
+
+### `deleteKey`
+
+Deletes a key from the value store. The scope must match the one used when the key was created.
+
+```js
+const { AnedyaGetKeyReq, AnedyaDeleteKeyResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
+
+const req = new AnedyaGetKeyReq({ scope: AnedyaScope.NODE }, "threshold");
+const res = await node.deleteKey(req);
+
+if (res.isSuccess) console.log("Key deleted");
+```
+
+---
+
+### `scanKeys`
+
+Lists keys in the value store for a given namespace, with ordering and pagination. Returns up to 100 keys per call.
+
+```js
+const { AnedyaScanKeysReq, AnedyaScanKeysResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
+
+const req = new AnedyaScanKeysReq(
+  { namespace: { scope: AnedyaScope.NODE } },
+  "namespace",  // scan type
+  "asc",        // order
+  10,           // limit
+  0             // offset
+);
+const res = await node.scanKeys(req);
+
+if (res.isSuccess) console.log(res.data);
+```
+
+---
+
+### `getDeviceStatus`
+
+Checks whether the node is online based on when it last sent a heartbeat.
+
+```js
+const res = await node.getDeviceStatus(60); // online if heartbeat within last 60 seconds
+
+if (res.isSuccess) {
+  const status = res.data[node.getNodeId()];
+  console.log("Online:", status.online);
+  console.log("Last heartbeat:", new Date(status.lastHeartbeat * 1000));
+}
+```
+
+Pass a `lastContactThreshold` in seconds. If the device sent a heartbeat within that window, it is considered online.
+
+---
+
+## Live Streaming
+
+The stream client opens a WebSocket connection and delivers incoming data to subscriber callbacks in real time.
+
+### Stream Setup
+
+```js
+const stream = anedya.NewStream(
   client,
   node,
   "your-stream-id",
-  "wss://stream.anedya.io/..."
+  "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 );
 
-// 3. Register subscriptions BEFORE connecting
-const tempSub = stream.onVariable("temperature", (data) => {
-  console.log("Temperature:", data.value, "at", data.timestamp);
-});
+stream.onStatus((status) => console.log("Status:", status));
+stream.onError((err)   => console.error("Error:", err));
 
-// 4. Connect — the WebSocket opens here
 await stream.connect();
 ```
 
----
+To close the stream permanently:
 
-## Constructor
-
-```ts
-new AnedyaStreamClient(
-  client: NewClient,
-  node: NewNode,
-  streamId: string,
-  streamUrl: string
-)
+```js
+stream.disconnect(); // no reconnect will happen after this
 ```
-
-| Parameter   | Type        | Description                                                  |
-|-------------|-------------|--------------------------------------------------------------|
-| `client`    | `NewClient` | Holds your API credentials and signing keys                  |
-| `node`      | `NewNode`   | The device/node you want to stream data from                 |
-| `streamId`  | `string`    | The stream identifier provided by Anedya                     |
-| `streamUrl` | `string`    | The WebSocket URL for the stream (e.g. `wss://...`)          |
-
-The stream client reads auth credentials from `client` and signs the WebSocket URL automatically — you don't need to handle authentication manually.
 
 ---
 
-## Connecting & Disconnecting
+### `onVariable`
 
-### `connect()`
+Fires whenever a message arrives for a specific variable identifier.
 
-```ts
-await stream.connect();
-```
-
-Opens the WebSocket connection. Authentication headers are derived from your client config and passed as query parameters (required because browsers don't support custom WebSocket headers).
-
-- If already connected or destroyed, calling `connect()` again is a no-op.
-- Reconnection on drop is handled automatically (see [Reconnection Behaviour](#reconnection-behaviour)).
-
-### `disconnect()`
-
-```ts
-stream.disconnect();
-```
-
-Permanently closes the WebSocket. **No reconnect will happen after this.** Use this when you want to fully tear down the stream (e.g. on component unmount or app shutdown).
-
----
-
-## Subscriptions
-
-There are three subscription methods. Each returns an **`IStreamSubscription`** handle that lets you control that individual subscription.
-
----
-
-### `onVariable` — Subscribe to a specific variable
-
-```ts
-const sub = stream.onVariable(variableId: string, callback: (data: VariableData) => void): IStreamSubscription
-```
-
-Fires `callback` whenever a message arrives for the given `variableId`. The `variableId` must exactly match the `variable` field in the incoming message.
-
-**Example:**
-
-```ts
-const tempSub = stream.onVariable("temperature", (data) => {
-  console.log(`Node: ${data.nodeId}`);
-  console.log(`Value: ${data.value}`);
-  console.log(`Timestamp: ${data.timestamp}`);
+```js
+const sub = stream.onVariable("temperature", (data) => {
+  console.log(data.value, data.timestamp);
 });
 ```
 
 ---
 
-### `onValueStore` — Subscribe to a value store key
+### `onValueStore`
 
-```ts
-const sub = stream.onValueStore(key: string, callback: (data: ValueStoreData) => void): IStreamSubscription
-```
+Fires whenever a value store update arrives for a specific key.
 
-Fires `callback` whenever a value store update arrives for the given `key`. The `key` must exactly match the `key` field in the incoming message.
-
-**Example:**
-
-```ts
-const configSub = stream.onValueStore("threshold", (data) => {
-  console.log(`New threshold: ${data.value}`);
-  console.log(`Scope: ${data.scope}`);
+```js
+const sub = stream.onValueStore("threshold", (data) => {
+  console.log("New threshold:", data.value);
 });
 ```
 
 ---
 
-### `onEvent` — Catch-all listener
+### `onAllMessages`
 
-```ts
-const sub = stream.onEvent(callback: (data: VariableData) => void): IStreamSubscription
-```
+Fires for **every** incoming message on the stream — both variable messages and value store messages, regardless of variable name or key. Useful for logging everything or building generic handlers.
 
-Fires `callback` for **every** message. Useful for debugging, logging, or building generic handlers that don't care about the specific data.
+Each delivered object carries a `kind` field so you can tell which shape you received: `"variable"` (a `VariableData`) or `"valuestore"` (a `ValueStoreData`).
 
-**Example:**
-
-```ts
-const debugSub = stream.onEvent((data) => {
-  console.log(`From node ${data.nodeId}: variable=${data.variable}, value=${data.value}`);
+```js
+const sub = stream.onAllMessages((data) => {
+  if (data.kind === "variable") {
+    console.log("Variable:", data.variable, data.value, data.nodeId);
+  } else {
+    console.log("Value store:", data.key, data.value, data.nodeId);
+  }
 });
 ```
 
 ---
 
-## Subscription Handles — pause, resume, cancel
+### Subscription control — pause, resume, cancel
 
-Every subscription method returns an `IStreamSubscription` object:
+Every subscription method returns a handle with three controls. They affect only that one subscription — the connection and all other subscriptions are unaffected.
 
 ```ts
 interface IStreamSubscription {
-  pause(): void;
-  resume(): void;
-  cancel(): void;
+  pause(): void;   // stop delivering to this callback (connection stays open)
+  resume(): void;  // re-enable delivery (messages during pause are not replayed)
+  cancel(): void;  // permanently remove this subscription
 }
 ```
 
-These let you control **one subscription in isolation** — they have no effect on the WebSocket connection or any other subscription.
+**pause / resume** — temporarily stop and restart a subscription:
 
----
-
-### `pause()`
-
-Temporarily stops delivering messages to **this** callback. The WebSocket connection stays open, and messages keep arriving — they're just not forwarded to this particular callback while it's paused.
-
-```ts
+```js
 const sub = stream.onVariable("temperature", (data) => {
   if (data.value > 90) {
-    sub.pause(); // stop receiving updates until manually resumed
-    triggerAlert();
+    sub.pause();
+    setTimeout(() => sub.resume(), 10_000);
   }
 });
 ```
 
----
+**cancel** — one-shot pattern, unsubscribe after the first message:
 
-### `resume()`
-
-Re-enables message delivery to a paused callback. Only messages that arrive **after** `resume()` is called will be delivered — messages that came in while paused are not replayed.
-
-```ts
-// Resume delivery after handling the alert
-setTimeout(() => {
-  sub.resume();
-}, 5000);
-```
-
----
-
-### `cancel()`
-
-Permanently removes this subscription. Once cancelled, the callback will never fire again regardless of incoming messages. **This cannot be undone** — to re-subscribe, call `onVariable` / `onValueStore` / `onEvent` again.
-
-```ts
-// One-shot: receive one value store update and then stop
-const sub = stream.onValueStore("config-key", (data) => {
+```js
+const sub = stream.onValueStore("config", (data) => {
   applyConfig(data.value);
-  sub.cancel(); // unsubscribe after the first hit
+  sub.cancel();
 });
 ```
 
 ---
 
-### Example: Combining pause, resume, and cancel
+### Global pause & resume
 
-```ts
-let alertActive = false;
+Pauses or resumes delivery to **all** callbacks at once without closing the connection.
 
-const sub = stream.onVariable("pressure", (data) => {
-  if (data.value > 200 && !alertActive) {
-    alertActive = true;
-    sub.pause();           // stop receiving pressure updates during the alert
-
-    handleAlert().then(() => {
-      alertActive = false;
-      sub.resume();        // re-enable updates once handled
-    });
-  }
-});
-
-// After 1 minute, tear down entirely
-setTimeout(() => sub.cancel(), 60_000);
-```
-
----
-
-## Global pause & resume
-
-In addition to per-subscription control, you can pause and resume **all** callbacks at once. The WebSocket stays connected — messages are discarded at the delivery layer.
-
-```ts
-stream.pause();   // all callbacks stop receiving — globally
+```js
+stream.pause();   // all callbacks stop receiving
 stream.resume();  // all callbacks start receiving again
 ```
 
-This is useful when your app goes into a background state and you don't want to process incoming data temporarily, but you also don't want to disconnect and reconnect.
-
-> **Note:** Global pause stacks with per-subscription pause. If a subscription is individually paused, `stream.resume()` will not un-pause it — you need to call `sub.resume()` on that subscription separately.
+> If a subscription was individually paused before `stream.pause()`, calling `stream.resume()` will not un-pause it — you still need to call `sub.resume()` on that subscription separately.
 
 ---
 
-## Error Handling
+### Connection status & errors
 
-```ts
-stream.onError((err) => {
-  console.error("WebSocket error:", err);
-});
-```
-
-`onError` registers a global listener for WebSocket-level errors. You can register multiple error listeners; all of them will be called on each error event. This does not catch CBOR decoding errors (those are logged to the console internally).
-
----
-
-## Connection Status
-
-```ts
+```js
 stream.onStatus((status) => {
-  // status is one of: "connected" | "disconnected" | "reconnecting"
-  console.log("Stream status:", status);
+  // "connected" | "disconnected" | "reconnecting"
+});
+
+stream.onError((err) => {
+  console.error(err);
 });
 ```
 
-Register a callback to be notified whenever the connection state changes. Useful for updating UI indicators or triggering application-level logic on drops.
+---
 
-| Status          | Meaning                                                         |
-|-----------------|-----------------------------------------------------------------|
-| `"connected"`   | WebSocket is open and receiving messages                        |
-| `"disconnected"`| WebSocket closed (will attempt to reconnect unless destroyed)   |
-| `"reconnecting"`| A reconnect attempt is scheduled                               |
+### Reconnection
+
+If the connection drops unexpectedly, the stream automatically retries with a 3-second delay, up to 5 attempts. Calling `disconnect()` cancels all future reconnect attempts. Subscriptions survive reconnects and resume firing once the connection is restored.
 
 ---
 
-## Reconnection Behaviour
+## Data Shapes
 
-If the WebSocket drops unexpectedly, the client will automatically try to reconnect with a fixed 3-second delay. It will attempt up to **5 reconnects** before giving up and logging an error.
-
-- Calling `disconnect()` stops any future reconnect attempts permanently.
-- Subscriptions are preserved across reconnects — your callbacks will resume firing once the connection is re-established.
-
----
-
-## Data Types
-
-### `VariableData`
-
-Delivered to `onVariable` and `onEvent` callbacks.
+**VariableData** — delivered by `onVariable`, and by `onAllMessages` (tagged with `kind: "variable"`):
 
 ```ts
-interface VariableData {
-  nodeId: string | undefined;  // hex string identifying the source node
-  variable: string;            // the variable identifier (e.g. "temperature")
-  value: any;                  // the variable's current value
-  timestamp: number;           // Unix timestamp (seconds)
-  dataType: number;            // raw data type byte from the message header
+{
+  nodeId:    string | undefined  // source node (hex string)
+  variable:  string              // variable identifier
+  value:     any                 // current value
+  timestamp: number              // Unix seconds
+  dataType:  number              // data type byte
 }
 ```
 
----
-
-### `ValueStoreData`
-
-Delivered to `onValueStore` callbacks.
+**ValueStoreData** — delivered by `onValueStore`, and by `onAllMessages` (tagged with `kind: "valuestore"`):
 
 ```ts
-interface ValueStoreData {
-  nodeId: string | undefined;  // hex string identifying the source node
-  scope: string | undefined;   // value store scope (if any)
-  key: string;                 // the value store key (e.g. "threshold")
-  value: any;                  // the stored value
-  timestamp: number;           // Unix timestamp (seconds)
-  type: any;                   // type metadata from the message
+{
+  nodeId:    string | undefined  // source node (hex string)
+  scope:     string | undefined  // store scope
+  key:       string              // key name
+  value:     any                 // stored value
+  timestamp: number              // Unix seconds
+  type:      any                 // type metadata
 }
 ```
 
----
-
----
-
-## Full Example
+**AllMessagesData** — the union type delivered by `onAllMessages`. It's either of the above shapes plus a `kind` discriminant:
 
 ```ts
-import { AnedyaStreamClient } from "./stream";
-import { NewClient } from "./client";
-import { NewNode } from "./node";
-
-const client = NewClient({
-  // your connection config
-});
-
-const node = NewNode(client, "your-node-id");
-
-const stream = new AnedyaStreamClient(
-  client,
-  node,
-  "your-stream-id",
-  "wss://stream.anedya.io/your-endpoint"
-);
-
-// Listen for connection status changes
-stream.onStatus((status) => {
-  console.log("[Stream status]:", status);
-});
-
-// Handle WebSocket errors
-stream.onError((err) => {
-  console.error("[Stream error]:", err);
-});
-
-// Subscribe to a specific variable
-const tempSub = stream.onVariable("temperature", (data) => {
-  console.log("Temperature:", data.value);
-
-  if (data.value > 100) {
-    tempSub.pause(); // too hot — pause until we cool down
-  }
-});
-
-// Subscribe to a value store key (one-shot)
-const configSub = stream.onValueStore("alert-threshold", (data) => {
-  applyThreshold(data.value);
-  configSub.cancel(); // only needed once
-});
-
-// Catch-all for debugging — fires for every incoming message
-const debugSub = stream.onEvent((data) => {
-  console.log(`[Any] ${data.variable} = ${data.value} (node: ${data.nodeId})`);
-});
-
-// Open the connection
-await stream.connect();
-
-// Later: cleanly shut down
-// stream.disconnect();
+type AllMessagesData =
+  | (VariableData & { kind: "variable" })
+  | (ValueStoreData & { kind: "valuestore" });
 ```
