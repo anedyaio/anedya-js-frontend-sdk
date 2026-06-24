@@ -23,22 +23,22 @@ var AnedyaSDK = (() => {
   __export(index_exports, {
     Anedya: () => V,
     AnedyaDataType: () => X,
-    AnedyaDeleteKeyReq: () => x,
+    AnedyaDeleteKeyReq: () => k,
     AnedyaDeleteKeyResp: () => S,
     AnedyaError: () => K,
     AnedyaGetDataReq: () => C,
     AnedyaGetDataResp: () => m,
     AnedyaGetDeviceStatusResp: () => A,
     AnedyaGetKeyReq: () => T,
-    AnedyaGetKeyResp: () => b,
+    AnedyaGetKeyResp: () => g,
     AnedyaGetLatestDataResp: () => h,
     AnedyaGetSnapshotReq: () => E,
     AnedyaGetSnapshotResp: () => I,
-    AnedyaScanKeysReq: () => k,
+    AnedyaScanKeysReq: () => x,
     AnedyaScanKeysResp: () => f,
     AnedyaScope: () => z,
     AnedyaSetKeyReq: () => N,
-    AnedyaSetKeyResp: () => g,
+    AnedyaSetKeyResp: () => b,
     getAnedyaErrorMessage: () => j
   });
 
@@ -2376,7 +2376,7 @@ var AnedyaSDK = (() => {
       if (this.type !== "string" && this.type !== "binary" && this.type !== "float" && this.type !== "boolean") throw new Error("Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'.");
     }
   };
-  var g = class {
+  var b = class {
     isSuccess;
     error;
     constructor() {
@@ -2390,7 +2390,7 @@ var AnedyaSDK = (() => {
       if (this.namespace.scope !== "global" && this.namespace.scope !== "node") throw new Error("Invalid namespace scope. It should be either 'global' or 'node'.");
     }
   };
-  var b = class {
+  var g = class {
     isSuccess;
     error;
     namespace;
@@ -2404,7 +2404,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" }, this.namespace = { scope: "", id: "" }, this.key = "", this.value = void 0, this.type = "", this.size = 0, this.modified = 0, this.created = 0;
     }
   };
-  var x = class {
+  var k = class {
     constructor(e, r) {
       this.namespace = e;
       this.key = r;
@@ -2418,7 +2418,7 @@ var AnedyaSDK = (() => {
       this.isSuccess = false, this.error = { errorMessage: "", reasonCode: "" };
     }
   };
-  var k = class {
+  var x = class {
     constructor(e, r, t, o, n) {
       this.filter = e;
       this.orderby = r;
@@ -2476,8 +2476,7 @@ var AnedyaSDK = (() => {
       y.set(n, 0), y.set(l, n.length), y.set(e.signatureVersionBytes, n.length + l.length), y.set(e.tokenBytes, n.length + l.length + e.signatureVersionBytes.length);
       let u = await crypto.subtle.digest("SHA-256", y);
       return Array.from(new Uint8Array(u)).map((d) => d.toString(16).padStart(2, "0")).join("");
-    } catch (t) {
-      console.log(t);
+    } catch {
     }
   };
   var _ = async (c, e, r, t) => {
@@ -2521,7 +2520,7 @@ var AnedyaSDK = (() => {
     t.namespace.scope === "node" ? n = r[0] : n = t.namespace.id;
     let l = { namespace: { scope: t.namespace.scope, id: n }, key: t.key, value: t.value, type: t.type }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new g();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new b();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a;
@@ -2537,7 +2536,7 @@ var AnedyaSDK = (() => {
     t.namespace.scope === "node" ? n = r[0] : n = t.namespace.id;
     let l = { namespace: { scope: t.namespace.scope, id: n }, key: t.key }, y = Math.floor(Date.now() / 1e3), u = await p(l, e, y);
     try {
-      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new b();
+      let d = { Authorization: e.authorizationMode, "x-Anedya-SignatureVersion": e.signatureVersion, "X-Anedya-Tokenid": e.tokenId, "X-Anedya-Timestamp": y.toString(), "X-Anedya-Signature": u, "Content-Type": "application/json" }, s = await fetch(o, { method: "POST", credentials: "same-origin", headers: d, body: JSON.stringify(l) }), a = new g();
       try {
         let i = await s.json();
         return a.isSuccess = i.success, a.error.errorMessage = i.error, a.error.reasonCode = i.reasonCode, a.namespace = i.namespace, a.key = i.key, a.value = i.value, a.type = i.type, a.size = i.size, a.modified = i.modified, a.created = i.created, a;
@@ -2669,13 +2668,13 @@ var AnedyaSDK = (() => {
       if (this.isConnected || this.destroyed) return;
       let e = Math.floor(Date.now() / 1e3), r = await p(null, this.configHeaders, e), t = new URL(this.streamUrl);
       t.searchParams.set("Authorization", this.configHeaders.authorizationMode), t.searchParams.set("x-anedya-streamid", this.streamId), t.searchParams.set("x-anedya-tokenid", this.configHeaders.tokenId), t.searchParams.set("x-anedya-signature", r), t.searchParams.set("x-anedya-timestamp", e.toString()), t.searchParams.set("x-anedya-signatureversion", this.configHeaders.signatureVersion), this.ws = new WebSocket(t.toString()), this.ws.binaryType = "arraybuffer", this.ws.onopen = () => {
-        this.isConnected = true, this.reconnectAttempts = 0, console.log("\u2705 Stream connected"), this.emitStatus("connected");
+        this.isConnected = true, this.reconnectAttempts = 0, this.emitStatus("connected");
       }, this.ws.onmessage = (o) => {
         this.handleRawMessage(new Uint8Array(o.data));
       }, this.ws.onerror = (o) => {
         this.errorListeners.forEach((n) => n(o));
       }, this.ws.onclose = (o) => {
-        console.log("WS CLOSED", { code: o.code, reason: o.reason, wasClean: o.wasClean }), this.isConnected = false, this.emitStatus("disconnected"), this.destroyed || this.scheduleReconnect();
+        this.isConnected = false, this.emitStatus("disconnected"), this.destroyed || this.scheduleReconnect();
       };
     }
     pause() {
@@ -2711,7 +2710,7 @@ var AnedyaSDK = (() => {
         return;
       }
       let r = e[0], t = e[1], o = e[2];
-      console.log("\u{1F4E5} Raw frame:", Array.from(e).map((n) => n.toString(16).padStart(2, "0")).join(" ")), console.log("Header:", `[0x${r.toString(16)}, 0x${t.toString(16)}]`, "dataType:", o), r === 0 && t === 2 ? (console.log("\u2192 Identified as VALUE STORE, decoding slice(2):", Array.from(e.slice(2)).map((n) => n.toString(16).padStart(2, "0")).join(" ")), this.routeValueStore(e.slice(2))) : r === 0 && t === 1 ? (console.log("\u2192 Identified as VARIABLE, decoding slice(3):", Array.from(e.slice(3)).map((n) => n.toString(16).padStart(2, "0")).join(" ")), this.routeVariableOrEvent(e.slice(3), o)) : console.warn("Unknown message type:", r, t);
+      r === 0 && t === 2 ? this.routeValueStore(e.slice(2)) : r === 0 && t === 1 ? this.routeVariableOrEvent(e.slice(3), o) : console.warn("Unknown message type:", r, t);
     }
     routeValueStore(e) {
       try {
