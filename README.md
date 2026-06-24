@@ -27,7 +27,8 @@ A JavaScript/TypeScript SDK for interacting with the [Anedya](https://anedya.io)
   - [Global pause & resume](#global-pause--resume)
   - [Connection status & errors](#connection-status--errors)
   - [Reconnection](#reconnection)
-- [Data Shapes](#data-shapes)
+  - [Data Shapes](#data-shapes)
+
 
 ---
 
@@ -387,7 +388,7 @@ If the connection drops unexpectedly, the stream automatically retries with a 3-
 
 ---
 
-## Data Shapes
+### Data Shapes
 
 **VariableData** — delivered by `onVariable`, and by `onAllMessages` (tagged with `kind: "variable"`):
 
