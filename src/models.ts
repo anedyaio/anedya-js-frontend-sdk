@@ -76,6 +76,10 @@ export class AnedyaGetDataResp
 }
 
 // ----------------------------- Get Latest Data -------------------------------------------
+export interface IAnedyaGetLatestDataReq {
+  variable: string;
+}
+
 export interface IAnedyaGetLatestDataResp {
   isSuccess?: boolean;
   error: _IError;
@@ -183,7 +187,7 @@ export interface IAnedyaGetKeyResp {
     id: string;
   };
   key: string;
-  value: string | number | boolean;
+  value: string | number | boolean | Uint8Array | undefined;
   type: string;
   size: number;
   modified: number;
@@ -198,7 +202,7 @@ export class AnedyaGetKeyResp implements IAnedyaGetKeyResp {
     id: string;
   };
   key: string;
-  value: string | number | boolean | any;
+  value: string | number | boolean | Uint8Array | undefined;
   type: string;
   size: number;
   modified: number;
@@ -301,7 +305,7 @@ export interface IAnedyaScanKeysResp {
   error: _IError;
   count: number;
   totalCount: number;
-  data: any;
+  data: any[];
   next: number;
 }
 
@@ -312,14 +316,14 @@ export class AnedyaScanKeysResp
   error: _IError;
   count: number;
   totalCount: number;
-  data: any;
+  data: any[];
   next: number;
   constructor() {
     this.isSuccess = false;
     this.error = { errorMessage: "", reasonCode: "" };
     this.count = 0;
     this.totalCount = 0;
-    this.data = undefined;
+    this.data = [];
     this.next = 0;
   }
 }
@@ -329,7 +333,7 @@ export class AnedyaScanKeysResp
 export interface IAnedyaGetDeviceStatusResp {
   isSuccess: boolean;
   error: _IError;
-  data: any;
+  data: Record<string, { online: boolean; lastHeartbeat: number }>;
 }
 
 export class AnedyaGetDeviceStatusResp
@@ -337,11 +341,11 @@ export class AnedyaGetDeviceStatusResp
 {
   isSuccess: boolean;
   error: _IError;
-  data: any;
+  data: Record<string, { online: boolean; lastHeartbeat: number }>;
   constructor() {
     this.isSuccess = false;
     this.error = { errorMessage: "", reasonCode: "" };
-    this.data = undefined;
+    this.data = {};
   }
 }
 

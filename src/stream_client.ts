@@ -15,7 +15,7 @@ export interface IStreamSubscription {
 export interface VariableData {
   nodeId: string | undefined;
   variable: string;
-  value: any;
+  value: string | number | boolean | Uint8Array;
   timestamp: number;
   dataType: number;
 }
@@ -24,9 +24,9 @@ export interface ValueStoreData {
   nodeId: string | undefined;
   scope: string | undefined;
   key: string;
-  value: any;
+  value: string | number | boolean;
   timestamp: number;
-  type: any;
+  type: string | number;
 }
 
 // Messages delivered to onAllMessages() can be either shape — distinguish
@@ -38,7 +38,7 @@ export type AllMessagesData =
 type VariableCallback = (data: VariableData) => void;
 type ValueStoreCallback = (data: ValueStoreData) => void;
 type AllMessagesCallback = (data: AllMessagesData) => void;
-type ErrorCallback = (err: any) => void;
+type ErrorCallback = (err: Error) => void;
 type StatusCallback = (status: "connected" | "disconnected" | "reconnecting") => void;
 
 // ─── Internal subscription records ───────────────────────────────────────────
@@ -179,9 +179,10 @@ export class AnedyaStreamClient {
       this.handleRawMessage(new Uint8Array(event.data));
     };
 
-    this.ws.onerror = (event) => {
-      this.errorListeners.forEach((cb) => cb(event));
-    };
+     this.ws.onerror = (event) => {
+       this.errorListeners.forEach((cb) => cb(new Error("WebSocket error occurred")));
+     };
+
 
     this.ws.onclose = (event) => {
        //console.log("WS CLOSED", {

@@ -51,9 +51,9 @@ const { Anedya } = require("@anedyasystems/anedya-frontend-sdk");
 
 
 const anedya = new Anedya();
-const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
-const client = anedya.NewClient(config);
-const node   = anedya.NewNode(client, "YOUR_NODE_ID");
+const config = anedya.newConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
+const client = anedya.newClient(config);
+const node   = anedya.newNode(client, "YOUR_NODE_ID");
 ```
 
 **React, Vite, Next.js, or any other bundler** — `import`:
@@ -62,9 +62,9 @@ const node   = anedya.NewNode(client, "YOUR_NODE_ID");
 import { Anedya } from "@anedyasystems/anedya-frontend-sdk";
 
 const anedya = new Anedya();
-const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
-const client = anedya.NewClient(config);
-const node   = anedya.NewNode(client, "YOUR_NODE_ID");
+const config = anedya.newConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
+const client = anedya.newClient(config);
+const node   = anedya.newNode(client, "YOUR_NODE_ID");
 ```
 
 **Plain browser `<script>` tag (no bundler)** — load the pre-built IIFE bundle, which exposes everything on `window.AnedyaSDK`:
@@ -74,10 +74,11 @@ const node   = anedya.NewNode(client, "YOUR_NODE_ID");
 <script>
   const { Anedya } = window.AnedyaSDK;
 
-  const anedya = new Anedya();
-  const config = anedya.NewConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
-  const client = anedya.NewClient(config);
-  const node   = anedya.NewNode(client, "YOUR_NODE_ID");
+const anedya = new Anedya();
+const config = anedya.newConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
+const client = anedya.newClient(config);
+const node   = anedya.newNode(client, "YOUR_NODE_ID");
+
 </script>
 ```
 
@@ -257,7 +258,7 @@ The stream client opens a WebSocket connection and delivers incoming data to sub
 ### Stream Setup
 
 ```js
-const stream = anedya.NewStream(
+const stream = anedya.newStream(
   client,
   node,
   "your-stream-id",

@@ -32,7 +32,7 @@ export const setKey = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: AnedyaSetKeyReq
-): Promise<any> => {
+): Promise<AnedyaSetKeyResp> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -117,7 +117,7 @@ export const getKey = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaGetKeyReq
-): Promise<any> => {
+): Promise<AnedyaGetKeyResp> => {
   const url = `${baseUrl}/valuestore/getValue`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -198,7 +198,7 @@ export const deleteKey = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaDeleteKeyReq
-): Promise<any> => {
+): Promise<AnedyaDeleteKeyResp> => {
   const url = `${baseUrl}/valuestore/delete`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -276,7 +276,7 @@ export const scanKeys = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaScanKeysReq
-): Promise<any> => {
+): Promise<AnedyaScanKeysResp> => {
   const url = `${baseUrl}/valuestore/scan`;
   let Id;
   if (reqConfig.filter.namespace.scope === "node") {

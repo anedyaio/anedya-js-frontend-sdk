@@ -10,7 +10,7 @@ import {
   IAnedyaGetDataReq,
   IAnedyaGetDataResp,
   AnedyaGetDataResp,
-  IAnedyaGetLatestDataResp,
+  IAnedyaGetLatestDataReq,
   AnedyaGetLatestDataResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
@@ -58,7 +58,7 @@ export const getData = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   accessDataReq: IAnedyaGetDataReq
-): Promise<any> => {
+): Promise<AnedyaGetDataResp> => {
   const url = `${baseUrl}/data/getData`;
 
   // Request payload expected by Anedya backend
@@ -110,7 +110,7 @@ export const getData = async (
       res.data = null;
       // Map backend response into SDK response structure
       if (responseData.success) {
-        let data: any = responseData.data;
+        let data: _ITimeSeriesData | null = responseData.data;
         if (
           data == undefined ||
           data == null ||
@@ -118,7 +118,7 @@ export const getData = async (
         ) {
           res.isDataAvailable = false;
         } else if (nodes.length === 1) {
-          data = data[nodes.toString()];
+          data = data[nodes.toString()] as _ITimeSeriesData;
           res.data = data;
           res.isDataAvailable = true;
         } else {
@@ -179,9 +179,10 @@ interface _AnedyaGetLatestDataResp {
 export const fetchLatestData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
-  nodes: string[],
-  accessDataReq: any
-): Promise<any> => {
+   nodes: string[],
+   accessDataReq: IAnedyaGetLatestDataReq
+ ): Promise<AnedyaGetLatestDataResp> => {
+
   const url = `${baseUrl}/data/latest`;
 
   // Request payload for latest data
@@ -204,7 +205,6 @@ export const fetchLatestData = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-
     const response = await fetch(url, {
       method: "POST",
       credentials: "same-origin",
@@ -222,7 +222,7 @@ export const fetchLatestData = async (
       res.data = null;
               // Map latest data into SDK response
       if (responseData.success) {
-        let data: any = responseData.data;
+        let data: _ITimeSeriesData | null = responseData.data;
         if (
           data == undefined ||
           data == null ||
@@ -230,7 +230,7 @@ export const fetchLatestData = async (
         ) {
           res.isDataAvailable = false;
         } else if (nodes.length === 1) {
-          data = data[nodes.toString()];
+          data = data[nodes.toString()] as _ITimeSeriesData;
           res.data = data;
           res.isDataAvailable = true;
         } else {
@@ -250,3 +250,4 @@ export const fetchLatestData = async (
     throw error;
   }
 };
+

@@ -24,7 +24,7 @@ export const getSnapshot = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   getSnapshotReq: IAnedyaGetSnapshotReq
-): Promise<any> => {
+): Promise<AnedyaGetSnapshotResp> => {
   const url = `${baseUrl}/data/snapshot`;
 
   const requestData = {

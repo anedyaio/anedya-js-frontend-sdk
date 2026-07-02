@@ -10,10 +10,10 @@ import { NewNode } from "./node";
 import { AnedyaStreamClient } from "./stream_client";
 
 interface IAnedya {
-  NewConfig(tokenId: string, token: string): NewConfig;
-  NewClient(configData: NewConfig): NewClient;
-  NewNode(client: NewClient, nodeId: string): NewNode;
-  NewStream(
+  newConfig(tokenId: string, token: string): NewConfig;
+  newClient(configData: NewConfig): NewClient;
+  newNode(client: NewClient, nodeId: string): NewNode;
+  newStream(
     client: NewClient,
     node: NewNode,
     streamId: string,
@@ -23,19 +23,19 @@ interface IAnedya {
 
 export class Anedya implements IAnedya {
 
-  NewConfig(tokenId: string, token: string): NewConfig {
+  newConfig(tokenId: string, token: string): NewConfig {
     return new NewConfig(tokenId, token);
   }
 
-  NewClient(configData: NewConfig): NewClient {
+  newClient(configData: NewConfig): NewClient {
     return new NewClient(configData);
   }
 
-  NewNode(client: NewClient, nodeId: string): NewNode {
+  newNode(client: NewClient, nodeId: string): NewNode {
     return new NewNode(client, nodeId);  
   }
 
-  NewStream(
+  newStream(
     client: NewClient,
     node: NewNode,
     streamId: string,

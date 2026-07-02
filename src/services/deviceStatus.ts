@@ -12,7 +12,7 @@ interface _AnedyaGetDeviceStatusResp {
   errcode: number;
   error: string;
   reasonCode: string;
-  data: any;
+  data: Record<string, { online: boolean; lastHeartbeat: number }>;
 }
 
 export const getDeviceStatus = async (
@@ -20,9 +20,8 @@ export const getDeviceStatus = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   lastContactThreshold: number
-): Promise<any> => {
+): Promise<AnedyaGetDeviceStatusResp> => {
   const url = `${baseUrl}/health/status`;
-
   const requestData = {
     nodes: nodes,
     lastContactThreshold: lastContactThreshold,
@@ -78,3 +77,4 @@ export const getDeviceStatus = async (
     throw error;
   }
 };
+

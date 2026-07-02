@@ -1,10 +1,10 @@
 import { IConfigHeaders } from "./common";
 
 export const anedyaSignature = async (
-  requestData: any,
+  requestData: unknown,
   configHeaders: IConfigHeaders,
   currentTime: number
-): Promise<any> => {
+): Promise<string> => {
   try {
     let bodyBytes: Uint8Array;
 

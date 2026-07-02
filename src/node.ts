@@ -12,15 +12,25 @@ import { setKey, getKey, deleteKey, scanKeys } from "./services/valueStore";
 import { getDeviceStatus } from "./services/deviceStatus";
 import {
   IAnedyaGetDataReq,
+  AnedyaGetDataResp,
   AnedyaSetKeyReq,
   IAnedyaGetKeyReq,
+  AnedyaGetKeyResp,
   IAnedyaDeleteKeyReq,
+  AnedyaDeleteKeyResp,
   IAnedyaScanKeysReq,
+  AnedyaScanKeysResp,
   IAnedyaGetSnapshotReq,
+  AnedyaGetSnapshotResp,
+  IAnedyaGetLatestDataReq,
+  AnedyaGetLatestDataResp,
+  AnedyaSetKeyResp,
+  AnedyaGetDeviceStatusResp,
 } from "./models";
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
 import { getSnapshot } from "./services/snapShot";
+
 
 
 /**
@@ -33,31 +43,31 @@ export interface INode {
   getNodeId(): string;
 
   /** Fetch historical time-series data for a given variable */
-  getData(accessDataReq: IAnedyaGetDataReq): Promise<any>;
+  getData(accessDataReq: IAnedyaGetDataReq): Promise<AnedyaGetDataResp>;
 
   /** Fetch the most recent data point for a given variable */
-  getLatestData(variableIdentifier: string): Promise<any>;
+  getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp>;
 
   /** Store a key-value pair in the node’s value store */
-  setKey(reqConfig: AnedyaSetKeyReq): Promise<any>;
+  setKey(reqConfig: AnedyaSetKeyReq): Promise<AnedyaSetKeyResp>;
 
   /** Retrieve a value from the node’s value store */
-  getKey(reqConfig: IAnedyaGetKeyReq): Promise<any>;
+  getKey(reqConfig: IAnedyaGetKeyReq): Promise<AnedyaGetKeyResp>;
 
   /** Delete a value from the node’s value store */
-  deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<any>;
+  deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<AnedyaDeleteKeyResp>;
 
   /** Scan through the node’s value store with filters */
-  scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<any>;
+  scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<AnedyaScanKeysResp>;
 
   /** Get device status (e.g., last contact timestamp) */
-  getDeviceStatus(lastContactThreshold: number): Promise<any>;
+  getDeviceStatus(lastContactThreshold: number): Promise<AnedyaGetDeviceStatusResp>;
 
   /**
    * Returns value of a variable at a particular time for given set of nodes.
    * Returns nearest datapoint submitted before specified time incase no datapoints found at the exact timestamp.
    */
-  getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any>;
+  getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<AnedyaGetSnapshotResp>;
 
 
 }
@@ -136,7 +146,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async getData(accessDataReq: IAnedyaGetDataReq): Promise<any> {
+  async getData(accessDataReq: IAnedyaGetDataReq): Promise<AnedyaGetDataResp> {
     return await getData(
       this.#baseUrl,
       this.#configHeaders,
@@ -145,31 +155,32 @@ export class NewNode implements INode {
     );
   }
 
-  /**
-   * Fetches the latest data point from the node for the given variable.
-   *
-   * @param {string} variableIdentifier - The variable identifier to fetch the latest data point for.
-   * @returns {Promise<any>} A promise resolving to the response with data availability and payload.
-   *
-   * @example
-   * ```ts
-   * const res = await node.getLatestData("temperature");
-   * if (res.isSuccess && res.isDataAvailable) {
-   *   //console.log("Latest value:", res.data);
-   * }
-   * ```
-   */
-  async getLatestData(variableIdentifier: string) {
-    const accessDataReq = {
-      variable: variableIdentifier,
-    };
-    return await fetchLatestData(
-      this.#baseUrl,
-      this.#configHeaders,
-      [this.#nodeId],
-      accessDataReq,
-    );
-  }
+   /**
+    * Fetches the latest data point from the node for the given variable.
+    *
+    * @param {string} variableIdentifier - The variable identifier to fetch the latest data point for.
+    * @returns {Promise<AnedyaGetLatestDataResp>} A promise resolving to the response with data availability and payload.
+    *
+    * @example
+    * ```ts
+    * const res = await node.getLatestData("temperature");
+    * if (res.isSuccess && res.isDataAvailable) {
+    *   //console.log("Latest value:", res.data);
+    * }
+    * ```
+    */
+   async getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp> {
+     const accessDataReq: IAnedyaGetLatestDataReq = {
+       variable: variableIdentifier,
+     };
+     return await fetchLatestData(
+       this.#baseUrl,
+       this.#configHeaders,
+       [this.#nodeId],
+       accessDataReq,
+     );
+   }
+
 
   /**
    * Sets a key/value pair in the Node's value store.
@@ -205,7 +216,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async setKey(reqConfig: AnedyaSetKeyReq): Promise<any> {
+  async setKey(reqConfig: AnedyaSetKeyReq): Promise<AnedyaSetKeyResp> {
     return await setKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -238,7 +249,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async getKey(reqConfig: IAnedyaGetKeyReq): Promise<any> {
+  async getKey(reqConfig: IAnedyaGetKeyReq): Promise<AnedyaGetKeyResp> {
     return await getKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -271,7 +282,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<any> {
+  async deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<AnedyaDeleteKeyResp> {
     return await deleteKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -307,7 +318,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<any> {
+  async scanKeys(reqConfig: IAnedyaScanKeysReq): Promise<AnedyaScanKeysResp> {
     return await scanKeys(
       this.#baseUrl,
       this.#configHeaders,
@@ -351,7 +362,7 @@ export class NewNode implements INode {
    * const res = await node.getDeviceStatus(300);
    * ```
    */
-  async getDeviceStatus(lastContactThreshold: number): Promise<any> {
+  async getDeviceStatus(lastContactThreshold: number): Promise<AnedyaGetDeviceStatusResp> {
     return await getDeviceStatus(
       this.#baseUrl,
       this.#configHeaders,
@@ -401,7 +412,7 @@ export class NewNode implements INode {
    * });
    * ```
    */
-  async getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<any> {
+  async getSnapshot(reqConfig: IAnedyaGetSnapshotReq): Promise<AnedyaGetSnapshotResp> {
     return await getSnapshot(
       this.#baseUrl,
       this.#configHeaders,

@@ -18,26 +18,26 @@ const {
 } = require("@anedyasystems/anedya-frontend-sdk");
 
 
-const streamId           = ""
-const streamUrl          = ""
-const tokenId            = ""
-const token              = ""
-const nodeId             = ""
-const variableIdentifier = ""
-const valueStoreKey      = ""
+const streamId = "019f23ca-b4a6-7aab-8d7e-328a1c0b0372"
+const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+const tokenId = "TSM6db7mbI22O245NZH8cSQE"
+const token = "e5eWxsGLiOous4abs3Z2wcsmNIwPS2ZtLWlGIRSD0qKo3f1zjKnRnBegX4IDFnps"
+const nodeId = "019f1ca6-82bc-7600-bc72-4435f9dd2774"
+const variableIdentifier = "humidity"
+const valueStoreKey = "check-1"
 
 // Initialize Anedya Client
 const anedya = new Anedya();
-const connect_config = anedya.NewConfig(tokenId, token);
-const client = anedya.NewClient(connect_config);
-const node_1 = anedya.NewNode(client, nodeId);
-const stream = anedya.NewStream(client, node_1, streamId, streamUrl);
+const connect_config = anedya.newConfig(tokenId, token);
+const client = anedya.newClient(connect_config);
+const node_1 = anedya.newNode(client, nodeId);
+const stream = anedya.newStream(client, node_1, streamId, streamUrl);
 
 // Example function to get Node ID
 async function getNodeId() {
   try {
     const nodeId = node_1.getNodeId();
-    //console.log("Node Id:", nodeId);
+    console.log("Node Id:", nodeId);
   } catch (error) {
     console.error("Error getting Node Id:", error);
   }
@@ -58,9 +58,9 @@ async function getData() {
     res = await node_1.getData(req);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
-        //console.log("Data:", res.data);
+        console.log("Data:", res.data);
       } else {
-        //console.log("No data available in Requested timestamp!!");
+        console.log("No data available in Requested timestamp!!");
       }
     } else {
       console.error("Error fetching data:", res.error.errorMessage);
@@ -77,9 +77,9 @@ async function getLatestData() {
     res = await node_1.getLatestData(variableIdentifier);
     if (res.isSuccess) {
       if (res.isDataAvailable) {
-        //console.log("Latest Data:", res.data);
+        console.log("Latest Data:", res.data);
       } else {
-        //console.log("No latest data available!");
+        console.log("No latest data available!");
       }
     } else {
       console.error("Error fetching latest data:", res.error);
@@ -101,7 +101,7 @@ async function setKey() {
     res = await node_1.setKey(req);
 
     if (res.isSuccess) {
-      //console.log("Key set successfully!");
+      console.log("Key set successfully!");
     } else {
       console.error("Error setting key:", res);
     }
@@ -117,7 +117,7 @@ async function getKey() {
     res = await node_1.getKey(req);
 
     if (res.isSuccess) {
-      //console.log("Key fetched successfully!");
+      console.log("Key fetched successfully!");
     } else {
       console.error("Error fetching key:", res);
     }
@@ -133,7 +133,7 @@ async function deleteKey() {
     res = await node_1.deleteKey(req);
 
     if (res.isSuccess) {
-      //console.log("Key deleted successfully!");
+      console.log("Key deleted successfully!");
     } else {
       console.error("Error deleting key: ", res.error.errorMessage);
     }
@@ -155,7 +155,7 @@ async function scanKeys() {
     res = await node_1.scanKeys(req);
 
     if (res.isSuccess) {
-      //console.log("Keys scanned successfully!");
+      console.log("Keys scanned successfully!");
     } else {
       console.error("Error scanning Keys:", res);
     }
@@ -169,7 +169,7 @@ async function getDeviceStatus() {
   try {
     let res = new AnedyaGetDeviceStatusResp();
     res = await node_1.getDeviceStatus(10);
-    //console.log("Device Status:", res);
+    console.log("Device Status:", res);
   } catch (error) {
     console.error("Error getting Device Status:", error);
   }
@@ -187,7 +187,7 @@ async function getSnapshot() {
     // Make the Req
     res = await node_1.getSnapshot(req);
 
-    //console.log("Snapshot:", res);
+    console.log("Snapshot:", res);
   } catch (error) {
     console.error("Error getting Snapshot:", error);
   }
@@ -210,7 +210,7 @@ async function getStream() {
   });
 
   const thresholdSub = stream.onValueStore(valueStoreKey, (data) => {
-    //console.log("🗄️ New threshold:", data.value);
+    console.log("🗄️ New threshold:", data.value);
     thresholdSub.cancel();
   });
 
@@ -218,9 +218,9 @@ async function getStream() {
   // data.kind tells you which shape you got: "variable" or "valuestore".
   const allSub = stream.onAllMessages((data) => {
     if (data.kind === "variable") {
-      //console.log("📡 All messages → variable:", data.variable, data.value);
+      console.log("📡 All messages → variable:", data.variable, data.value);
     } else {
-      //console.log("📡 All messages → valuestore:", data.key, data.value);
+      console.log("📡 All messages → valuestore:", data.key, data.value);
     }
   });
 
@@ -241,5 +241,5 @@ async function getStream() {
   await deleteKey();
   await scanKeys();
   await getDeviceStatus();
- await getStream();
+  await getStream();
 })();
