@@ -1,10 +1,15 @@
-import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
-import { IConfigHeaders } from "../common";
+import { IConfigHeaders, retry } from "../common";
 import {
   IAnedyaGetDeviceStatusResp,
   AnedyaGetDeviceStatusResp,
 } from "../models";
+import { validateResponse } from "../error_handler";
+import {
+  AnedyaError,
+  NetworkError,
+  ServerError,
+} from "../errors";
 
 // ------------------------ Device Status -------------------------
 interface _AnedyaGetDeviceStatusResp {
@@ -32,7 +37,8 @@ export const getDeviceStatus = async (
     configHeaders,
     currentTime
   );
-  try {
+
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -41,7 +47,6 @@ export const getDeviceStatus = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // //console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -49,32 +54,24 @@ export const getDeviceStatus = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResp();
-    try {
-      const responseData: _AnedyaGetDeviceStatusResp =
-        await response.json();
-      // //console.log(responseData);
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      if (!res.isSuccess) {
-        return res;
-      }
-      if (nodes.length === 1) {
-        res.data = responseData.data[nodes[0]];
-      } else {
-        res.data = responseData.data;
-      }
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
-    }
-  } catch (error) {
-    console.error("Error during fetch operation:", error);
-    throw error;
-  }
-};
 
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetDeviceStatusResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+    }
+
+    const res = new AnedyaGetDeviceStatusResp();
+    res.isSuccess = true;
+    if (nodes.length === 1) {
+      res.data = responseData.data[nodes[0]];
+    } else {
+      res.data = responseData.data;
+    }
+    return res;
+  };
+
+  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+};

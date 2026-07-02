@@ -241,23 +241,31 @@ if (res.isSuccess) console.log(res.data);
 
 ---
 
+## Node Methods
+ 
+...
+ 
 ### `getDeviceStatus`
-
+ 
 Checks whether the node is online based on when it last sent a heartbeat.
-
+ 
 ```js
-const res = await node.getDeviceStatus(60); // online if heartbeat within last 60 seconds
-
-if (res.isSuccess) {
-  const status = res.data[node.getNodeId()];
-  console.log("Online:", status.online);
-  console.log("Last heartbeat:", new Date(status.lastHeartbeat * 1000));
+try {
+  const res = await node.getDeviceStatus(60); // online if heartbeat within last 60 seconds
+  if (res.isSuccess) {
+    const status = res.data[node.getNodeId()];
+    console.log("Online:", status.online);
+    console.log("Last heartbeat:", new Date(status.lastHeartbeat * 1000));
+  }
+} catch (error) {
+  console.error("Error getting device status:", error.message);
 }
 ```
-
+ 
 Pass a `lastContactThreshold` in seconds. If the device sent a heartbeat within that window, it is considered online.
-
+ 
 ---
+
 
 ## Live Streaming
 

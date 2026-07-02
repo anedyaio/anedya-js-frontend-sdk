@@ -28,6 +28,7 @@ import {
   AnedyaGetDeviceStatusResp,
 } from "./models";
 
+import { AnedyaScope } from "./anedya_constant";
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
 import { getSnapshot } from "./services/snapShot";
@@ -49,8 +50,8 @@ export interface INode {
   /** Fetch the most recent data point for a given variable */
   getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp>;
 
-   /** Store a key-value pair in the node’s value store */
-   setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp>;
+  /** Store a key-value pair in the node’s value store */
+  setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp>;
 
 
   /** Retrieve a value from the node’s value store */
@@ -139,14 +140,6 @@ export class NewNode implements INode {
    * @param {"asc"|"desc"} [accessDataReq.order="desc"] - The order of the data points to return.
    * @returns {Promise<any>} A promise resolving to the response with data availability and payload.
    *
-   * @example
-   * ```ts
-   * const req = new AnedyaGetDataReq("temperature", Date.now() - 86400000, Date.now(), 100);
-   * const res = await node.getData(req);
-   * if (res.isSuccess && res.isDataAvailable) {
-   *   //console.log(res.data);
-   * }
-   * ```
    */
   async getData(accessDataReq: IAnedyaGetDataReq): Promise<AnedyaGetDataResp> {
     return await getData(
@@ -157,31 +150,32 @@ export class NewNode implements INode {
     );
   }
 
-   /**
-    * Fetches the latest data point from the node for the given variable.
-    *
-    * @param {string} variableIdentifier - The variable identifier to fetch the latest data point for.
-    * @returns {Promise<AnedyaGetLatestDataResp>} A promise resolving to the response with data availability and payload.
-    *
-    * @example
-    * ```ts
-    * const res = await node.getLatestData("temperature");
-    * if (res.isSuccess && res.isDataAvailable) {
-    *   //console.log("Latest value:", res.data);
-    * }
-    * ```
-    */
-   async getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp> {
-     const accessDataReq: IAnedyaGetLatestDataReq = {
-       variable: variableIdentifier,
-     };
-     return await fetchLatestData(
-       this.#baseUrl,
-       this.#configHeaders,
-       [this.#nodeId],
-       accessDataReq,
-     );
-   }
+  /**
+   * Fetches the latest data point from the node for the given variable.
+   *
+   * @param {string} variableIdentifier - The variable identifier to fetch the latest data point for.
+   * @returns {Promise<AnedyaGetLatestDataResp>} A promise resolving to the response with data availability and payload.
+   * @throws {AnedyaError} If the request fails.
+   *
+   * @example
+   * ```ts
+   * const res = await node.getLatestData("temperature");
+   * if (res.isSuccess && res.isDataAvailable) {
+   *   //console.log("Latest value:", res.data);
+   * }
+   * ```
+   */
+  async getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp> {
+    const accessDataReq: IAnedyaGetLatestDataReq = {
+      variable: variableIdentifier,
+    };
+    return await fetchLatestData(
+      this.#baseUrl,
+      this.#configHeaders,
+      [this.#nodeId],
+      accessDataReq,
+    );
+  }
 
 
   /**
@@ -219,7 +213,7 @@ export class NewNode implements INode {
    * }
    * ```
    */
-   async setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp> {
+  async setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp> {
 
     return await setKey(
       this.#baseUrl,
@@ -230,30 +224,20 @@ export class NewNode implements INode {
   }
 
   /**
-   * Retrieves a previously stored value for a key from the Node's value store.
-   *
-   * Scope determines where the SDK looks for the key:
-   * - `AnedyaScope.GLOBAL`: Searches in the global store (shared across all nodes).
-   * - `AnedyaScope.NODE`: Searches in this node’s local store only.
-   *
     * @param {IAnedyaGetKeyReq} reqConfig - Config with scope and key name to fetch.
     * @returns {Promise<AnedyaGetKeyResp>} Response containing the value if the key exists.
-
-   *
-   * @example
-   * ```ts
-   * // Fetch a temperature threshold key stored on this node
-   * const req = new AnedyaGetKeyReq(
-   *   { scope: AnedyaScope.NODE },
-   *   "temperature"
-   * );
-   *
-   * const res = await node.getKey(req);
-   * if (res.isSuccess && res.data) {
-   *   //console.log("Key value:", res.data);
-   * }
-   * ```
-   */
+    * @throws {AnedyaError} If the request fails.
+    *
+    * @example
+    * ```ts
+    * // Fetch a temperature threshold key stored on this node
+    * const req = new AnedyaGetKeyReq({ scope: AnedyaScope.NODE }, "temperature");
+    * const res = await node.getKey(req);
+    * if (res.isSuccess && res.data) {
+    *   //console.log("Key value:", res.data);
+    * }
+    * ```
+    */
   async getKey(reqConfig: IAnedyaGetKeyReq): Promise<AnedyaGetKeyResp> {
     return await getKey(
       this.#baseUrl,
@@ -271,16 +255,13 @@ export class NewNode implements INode {
    * - `AnedyaScope.NODE`: Removes the key only from this node’s local store.
    *
    * @param {IAnedyaDeleteKeyReq} reqConfig - Config with scope and key name to delete.
-   * @returns {Promise<any>} Response indicating whether deletion succeeded.
+   * @returns {Promise<AnedyaDeleteKeyResp>} Response indicating whether deletion succeeded.
+   * @throws {AnedyaError} If the request fails.
    *
    * @example
    * ```ts
    * // Remove a temperature threshold key stored on this node
-   * const req = new AnedyaDeleteKeyReq(
-   *   { scope: AnedyaScope.NODE },
-   *   "temperature"
-   * );
-   *
+   * const req = new AnedyaDeleteKeyReq({ scope: AnedyaScope.NODE }, "temperature");
    * const res = await node.deleteKey(req);
    * if (res.isSuccess) {
    *   //console.log("Key deleted successfully!");
@@ -288,6 +269,7 @@ export class NewNode implements INode {
    * ```
    */
   async deleteKey(reqConfig: IAnedyaDeleteKeyReq): Promise<AnedyaDeleteKeyResp> {
+
     return await deleteKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -297,15 +279,14 @@ export class NewNode implements INode {
   }
 
   /**
-   * Scans available items in the valuestore in a given namespace, with support for pagination. Can return max 100 items per call.
+   * Scans available items in the node's value store.
    *
-   *
-   * - Namespace must include a scope (`GLOBAL` or `NODE`).
+   * - Namespace must include a scope (`AnedyaScope.GLOBAL` or `AnedyaScope.NODE`).
    * - Results can be ordered (`asc` or `desc`) and paginated using limit/offset.
    *
-    * @param {IAnedyaScanKeysReq} reqConfig - Config including namespace, order, limit, and offset.
-    * @returns {Promise<AnedyaScanKeysResp>} Response containing a list of matching keys.
-
+   * @param {IAnedyaScanKeysReq} reqConfig - Config including namespace, order, limit, and offset.
+   * @returns {Promise<AnedyaScanKeysResp>} Response containing a list of matching keys.
+   * @throws {AnedyaError} If the request fails.
    *
    * @example
    * ```ts
@@ -317,7 +298,6 @@ export class NewNode implements INode {
    *   10,
    *   0
    * );
-   *
    * const res = await node.scanKeys(req);
    * if (res.isSuccess && res.data) {
    *   //console.log("Keys scanned successfully!", res.data);
@@ -334,7 +314,7 @@ export class NewNode implements INode {
   }
 
   /**
-   * Checks whether this node is currently online by evaluating its last heartbeat timestamp.
+   * Get device status (e.g., last contact timestamp)
    *
    * The Anedya platform stores the last heartbeat time for each device.
    * By passing `lastContactThreshold` (in seconds), you define how far back
@@ -347,7 +327,7 @@ export class NewNode implements INode {
    *   sent a heartbeat to be considered online. For example, if set to `60`, the node is only online
    *   if its last heartbeat was within the last 60 seconds.
    *
-   * @returns {Promise<any>} A promise resolving to the response object containing:
+   * @returns {Promise<AnedyaGetDeviceStatusResp>} A promise resolving to the response object containing:
    * - `online` (boolean): whether the node is online
    * - `lastHeartbeat` (number): the last heartbeat timestamp (UNIX seconds)
    *
@@ -376,6 +356,7 @@ export class NewNode implements INode {
       lastContactThreshold,
     );
   }
+
 
   /**
    * Retrieves the value of a variable for one or more nodes at a specific timestamp.

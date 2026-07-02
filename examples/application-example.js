@@ -1,5 +1,6 @@
 const {
   Anedya,
+  AnedyaError,
   AnedyaScope,
   AnedyaDataType,
 } = require("@anedyasystems/anedya-frontend-sdk");
@@ -10,7 +11,7 @@ const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 const tokenId = "TSM6db7mbI22O245NZH8cSQE"
 const token = "e5eWxsGLiOous4abs3Z2wcsmNIwPS2ZtLWlGIRSD0qKo3f1zjKnRnBegX4IDFnps"
 const nodeId = "019f1ca6-82bc-7600-bc72-4435f9dd2774"
-const variableIdentifier = "humidity"
+const variableIdentifier = "humidityfg"
 const valueStoreKey = "check-1"
 
 // Initialize Anedya Client
@@ -42,17 +43,17 @@ async function getData() {
       limit: 10
     });
 
-    if (res.isSuccess) {
-      if (res.isDataAvailable) {
-        console.log("Data:", res.data);
-      } else {
-        console.log("No data available in Requested timestamp!!");
-      }
+    if (res.isDataAvailable) {
+      console.log("Data:", res.data);
     } else {
-      console.error("Error fetching data:", res.error.errorMessage);
+      console.log("No data available in Requested timestamp!!");
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching data:", error);
+    }
   }
 }
 
@@ -60,36 +61,35 @@ async function getData() {
 async function getLatestData() {
   try {
     const res = await node_1.getLatestData(variableIdentifier);
-    if (res.isSuccess) {
-      if (res.isDataAvailable) {
-        console.log("Latest Data:", res.data);
-      } else {
-        console.log("No latest data available!");
-      }
+    if (res.isDataAvailable) {
+      console.log("Latest Data:", res.data);
     } else {
-      console.error("Error fetching latest data:", res.error);
+      console.log("No latest data available!");
     }
   } catch (error) {
-    console.error("Error fetching latest data:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching latest data:", error);
+    }
   }
 }
 
 async function setKey() {
   try {
-    const res = await node_1.setKey({
+    await node_1.setKey({
       namespace: { scope: AnedyaScope.NODE },
       key: "temperature",
       value: 30,
       type: AnedyaDataType.FLOAT
     });
-
-    if (res.isSuccess) {
-      console.log("Key set successfully!");
-    } else {
-      console.error("Error setting key:", res.error.errorMessage);
-    }
+    console.log("Key set successfully!");
   } catch (error) {
-    console.error("Error setting key:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error setting key:", error);
+    }
   }
 }
 
@@ -99,31 +99,29 @@ async function getKey() {
       namespace: { scope: AnedyaScope.NODE },
       key: "temperature"
     });
-
-    if (res.isSuccess) {
-      console.log("Key fetched successfully!", res.data);
-    } else {
-      console.error("Error fetching key:", res.error.errorMessage);
-    }
+    console.log("Key fetched successfully!", res.value);
   } catch (error) {
-    console.error("Error fetching key:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching key:", error);
+    }
   }
 }
 
 async function deleteKey() {
   try {
-    const res = await node_1.deleteKey({
+    await node_1.deleteKey({
       namespace: { scope: AnedyaScope.NODE },
       key: "temperature"
     });
-
-    if (res.isSuccess) {
-      console.log("Key deleted successfully!");
-    } else {
-      console.error("Error deleting key: ", res.error.errorMessage);
-    }
+    console.log("Key deleted successfully!");
   } catch (error) {
-    console.error("Error deleting key:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error deleting key:", error);
+    }
   }
 }
 
@@ -136,14 +134,13 @@ async function scanKeys() {
       limit: 10,
       offset: 0
     });
-
-    if (res.isSuccess) {
-      console.log("Keys scanned successfully!", res.data);
-    } else {
-      console.error("Error scanning Keys:", res.error.errorMessage);
-    }
+    console.log("Keys scanned successfully!", res.data);
   } catch (error) {
-    console.error("Error scanning Keys:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error scanning Keys:", error);
+    }
   }
 }
 
@@ -153,7 +150,11 @@ async function getDeviceStatus() {
     const res = await node_1.getDeviceStatus(10);
     console.log("Device Status:", res);
   } catch (error) {
-    console.error("Error getting Device Status:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error getting Device Status:", error);
+    }
   }
 }
 
@@ -165,10 +166,13 @@ async function getSnapshot() {
       time: currentTime,
       variable: variableIdentifier
     });
-
     console.log("Snapshot:", res);
   } catch (error) {
-    console.error("Error getting Snapshot:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error getting Snapshot:", error);
+    }
   }
 }
 
