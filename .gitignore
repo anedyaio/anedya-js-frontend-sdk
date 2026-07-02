@@ -7,6 +7,4 @@ previous/
 dist/
 postman/
 .env
-IMPLEMENTATION_PLAN.md
-.gitignore
-SDK_REVIEW.md
+
