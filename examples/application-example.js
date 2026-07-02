@@ -6,13 +6,13 @@ const {
 } = require("@anedyasystems/anedya-frontend-sdk");
 
 
-const streamId = "019f23ca-b4a6-7aab-8d7e-328a1c0b0372"
-const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
-const tokenId = "TSM6db7mbI22O245NZH8cSQE"
-const token = "e5eWxsGLiOous4abs3Z2wcsmNIwPS2ZtLWlGIRSD0qKo3f1zjKnRnBegX4IDFnps"
-const nodeId = "019f1ca6-82bc-7600-bc72-4435f9dd2774"
-const variableIdentifier = "humidityfg"
-const valueStoreKey = "check-1"
+const streamId = ""
+const streamUrl = ""
+const tokenId = ""
+const token = ""
+const nodeId = ""
+const variableIdentifier = ""
+const valueStoreKey = ""
 
 // Initialize Anedya Client
 const anedya = new Anedya();
