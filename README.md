@@ -101,29 +101,33 @@ const id = node.getNodeId();
 ---
 
 ### `getData`
-
+ 
 Fetches time-series data for a variable within a time range.
-
+ 
 ```js
-const { AnedyaGetDataReq, AnedyaGetDataResp } = require("@anedyasystems/anedya-frontend-sdk");
-
 const now  = Date.now();
-const req  = new AnedyaGetDataReq("temperature", now - 86400_000, now, 100);
-const res  = await node.getData(req);
-
+const res  = await node.getData({
+  variable: "temperature",
+  from: now - 86400_000,
+  to: now,
+  limit: 100
+});
+ 
 if (res.isSuccess && res.isDataAvailable) {
   console.log(res.data);
 }
 ```
-
+ 
 | Parameter | Type     | Description                              |
 |-----------|----------|------------------------------------------|
 | variable  | `string` | Variable identifier                      |
 | from      | `number` | Start timestamp in **milliseconds**      |
 | to        | `number` | End timestamp in **milliseconds**        |
 | limit     | `number` | Max data points to return (default 10000)|
-
+| order     | `string` | "asc" or "desc" (default "desc")         |
+ 
 ---
+
 
 ### `getLatestData`
 
@@ -140,36 +144,40 @@ if (res.isSuccess && res.isDataAvailable) {
 ---
 
 ### `getSnapshot`
-
+ 
 Returns the value of a variable at a specific point in time. If no data point exists at exactly that timestamp, the nearest one **before** it is returned.
-
+ 
 ```js
-const { AnedyaGetSnapshotReq } = require("@anedyasystems/anedya-frontend-sdk");
-
-const req = new AnedyaGetSnapshotReq(Math.floor(Date.now() / 1000), "temperature");
-const res = await node.getSnapshot(req);
-
+const res = await node.getSnapshot({
+  time: Math.floor(Date.now() / 1000),
+  variable: "temperature"
+});
+ 
 if (res.isSuccess && res.data.length > 0) {
   console.log(res.data[0].value, res.data[0].timestamp);
 }
 ```
-
+ 
 > Timestamps for `getSnapshot` are in **Unix seconds**, not milliseconds.
-
+ 
 ---
+
 
 ### `setKey`
 
 Stores a key-value pair in the value store.
 
 ```js
-const { AnedyaSetKeyReq, AnedyaSetKeyResp, AnedyaScope, AnedyaDataType } = require("@anedyasystems/anedya-frontend-sdk");
-
-const req = new AnedyaSetKeyReq({ scope: AnedyaScope.NODE }, "threshold", 75, AnedyaDataType.FLOAT);
-const res = await node.setKey(req);
-
+const res = await node.setKey({
+  namespace: { scope: AnedyaScope.NODE },
+  key: "threshold",
+  value: 75,
+  type: AnedyaDataType.FLOAT
+});
+ 
 if (res.isSuccess) console.log("Key set");
 ```
+
 
 **Scopes:**
 
@@ -187,13 +195,14 @@ if (res.isSuccess) console.log("Key set");
 Retrieves a stored value by key.
 
 ```js
-const { AnedyaGetKeyReq, AnedyaGetKeyResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
-
-const req = new AnedyaGetKeyReq({ scope: AnedyaScope.NODE }, "threshold");
-const res = await node.getKey(req);
-
+const res = await node.getKey({
+  namespace: { scope: AnedyaScope.NODE },
+  key: "threshold"
+});
+ 
 if (res.isSuccess) console.log(res.data);
 ```
+
 
 ---
 
@@ -202,13 +211,14 @@ if (res.isSuccess) console.log(res.data);
 Deletes a key from the value store. The scope must match the one used when the key was created.
 
 ```js
-const { AnedyaGetKeyReq, AnedyaDeleteKeyResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
-
-const req = new AnedyaGetKeyReq({ scope: AnedyaScope.NODE }, "threshold");
-const res = await node.deleteKey(req);
-
+const res = await node.deleteKey({
+  namespace: { scope: AnedyaScope.NODE },
+  key: "threshold"
+});
+ 
 if (res.isSuccess) console.log("Key deleted");
 ```
+
 
 ---
 
@@ -217,19 +227,17 @@ if (res.isSuccess) console.log("Key deleted");
 Lists keys in the value store for a given namespace, with ordering and pagination. Returns up to 100 keys per call.
 
 ```js
-const { AnedyaScanKeysReq, AnedyaScanKeysResp, AnedyaScope } = require("@anedyasystems/anedya-frontend-sdk");
-
-const req = new AnedyaScanKeysReq(
-  { namespace: { scope: AnedyaScope.NODE } },
-  "namespace",  // scan type
-  "asc",        // order
-  10,           // limit
-  0             // offset
-);
-const res = await node.scanKeys(req);
-
+const res = await node.scanKeys({
+  filter: { namespace: { scope: AnedyaScope.NODE } },
+  orderby: "namespace",
+  order: "asc",
+  limit: 10,
+  offset: 0
+});
+ 
 if (res.isSuccess) console.log(res.data);
 ```
+
 
 ---
 

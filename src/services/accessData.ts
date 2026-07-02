@@ -61,15 +61,16 @@ export const getData = async (
 ): Promise<AnedyaGetDataResp> => {
   const url = `${baseUrl}/data/getData`;
 
-  // Request payload expected by Anedya backend
-  const requestData = {
-    nodes: nodes,
-    variable: accessDataReq.variable,
-    from: Math.floor(accessDataReq.from / 1000),
-    to: Math.floor(accessDataReq.to / 1000),
-    limit: accessDataReq.limit,
-    order: accessDataReq.order,
-  };
+    // Request payload expected by Anedya backend
+    const requestData = {
+      nodes: nodes,
+      variable: accessDataReq.variable,
+      from: Math.floor(accessDataReq.from / 1000),
+      to: Math.floor(accessDataReq.to / 1000),
+      limit: accessDataReq.limit ?? 10000,
+      order: accessDataReq.order ?? "desc",
+    };
+
 
   // Generate request signature for secure communication
   const currentTime = Math.floor(Date.now() / 1000);

@@ -2,7 +2,7 @@
  Access Data from the Anedya platform side api.
 */
 import {
-  AnedyaSetKeyReq,
+  IAnedyaSetKeyReq,
   IAnedyaDeleteKeyResp,
   IAnedyaSetKeyResp,
   IAnedyaGetKeyReq,
@@ -31,7 +31,7 @@ export const setKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaSetKeyReq
+  reqConfig: IAnedyaSetKeyReq
 ): Promise<AnedyaSetKeyResp> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
@@ -293,9 +293,9 @@ export const scanKeys = async (
       },
     },
     orderby: reqConfig.orderby,
-    order: reqConfig.order,
-    limit: reqConfig.limit,
-    offset: reqConfig.offset,
+    order: reqConfig.order ?? "desc",
+    limit: reqConfig.limit ?? 100,
+    offset: reqConfig.offset ?? 0,
   };
   const currentTime = Math.floor(Date.now() / 1000);
   const combinedHash = await anedyaSignature(

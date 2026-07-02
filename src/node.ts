@@ -13,7 +13,6 @@ import { getDeviceStatus } from "./services/deviceStatus";
 import {
   IAnedyaGetDataReq,
   AnedyaGetDataResp,
-  AnedyaSetKeyReq,
   IAnedyaGetKeyReq,
   AnedyaGetKeyResp,
   IAnedyaDeleteKeyReq,
@@ -24,9 +23,11 @@ import {
   AnedyaGetSnapshotResp,
   IAnedyaGetLatestDataReq,
   AnedyaGetLatestDataResp,
+  IAnedyaSetKeyReq,
   AnedyaSetKeyResp,
   AnedyaGetDeviceStatusResp,
 } from "./models";
+
 import { NewClient } from "./client";
 import { IConfigHeaders } from "./common";
 import { getSnapshot } from "./services/snapShot";
@@ -48,8 +49,9 @@ export interface INode {
   /** Fetch the most recent data point for a given variable */
   getLatestData(variableIdentifier: string): Promise<AnedyaGetLatestDataResp>;
 
-  /** Store a key-value pair in the node’s value store */
-  setKey(reqConfig: AnedyaSetKeyReq): Promise<AnedyaSetKeyResp>;
+   /** Store a key-value pair in the node’s value store */
+   setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp>;
+
 
   /** Retrieve a value from the node’s value store */
   getKey(reqConfig: IAnedyaGetKeyReq): Promise<AnedyaGetKeyResp>;
@@ -197,8 +199,9 @@ export class NewNode implements INode {
    * - `FLOAT` → Stores numeric values with decimals
    * - `BOOLEAN` → Stores true/false flags
    *
-   * @param {AnedyaSetKeyRequestInterface} reqConfig - Request config including scope, key name, value, and type.
-   * @returns {Promise<any>} Response indicating success/failure of the operation.
+    * @param {IAnedyaSetKeyReq} reqConfig - Request config including scope, key name, value, and type.
+    * @returns {Promise<AnedyaSetKeyResp>} Response indicating success/failure of the operation.
+
    *
    * @example
    * ```ts
@@ -216,7 +219,8 @@ export class NewNode implements INode {
    * }
    * ```
    */
-  async setKey(reqConfig: AnedyaSetKeyReq): Promise<AnedyaSetKeyResp> {
+   async setKey(reqConfig: IAnedyaSetKeyReq): Promise<AnedyaSetKeyResp> {
+
     return await setKey(
       this.#baseUrl,
       this.#configHeaders,
@@ -232,8 +236,9 @@ export class NewNode implements INode {
    * - `AnedyaScope.GLOBAL`: Searches in the global store (shared across all nodes).
    * - `AnedyaScope.NODE`: Searches in this node’s local store only.
    *
-   * @param {AnedyaGetKeyReqInterface} reqConfig - Config with scope and key name to fetch.
-   * @returns {Promise<any>} Response containing the value if the key exists.
+    * @param {IAnedyaGetKeyReq} reqConfig - Config with scope and key name to fetch.
+    * @returns {Promise<AnedyaGetKeyResp>} Response containing the value if the key exists.
+
    *
    * @example
    * ```ts
@@ -298,8 +303,9 @@ export class NewNode implements INode {
    * - Namespace must include a scope (`GLOBAL` or `NODE`).
    * - Results can be ordered (`asc` or `desc`) and paginated using limit/offset.
    *
-   * @param {AnedyaScanKeysReqInterface} reqConfig - Config including namespace, order, limit, and offset.
-   * @returns {Promise<any>} Response containing a list of matching keys.
+    * @param {IAnedyaScanKeysReq} reqConfig - Config including namespace, order, limit, and offset.
+    * @returns {Promise<AnedyaScanKeysResp>} Response containing a list of matching keys.
+
    *
    * @example
    * ```ts

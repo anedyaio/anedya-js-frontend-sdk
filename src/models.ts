@@ -12,8 +12,8 @@ export interface IAnedyaGetDataReq {
   variable: string;
   from: number;
   to: number;
-  limit: number;
-  order: "asc" | "desc";
+  limit?: number;
+  order?: "asc" | "desc";
 }
 /**
  * Request object for fetching data.
@@ -269,9 +269,9 @@ export interface IAnedyaScanKeysReq {
     };
   };
   orderby: "namespace" | "key" | "created";
-  order: "asc" | "desc";
-  limit: number;
-  offset: number;
+  order?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
 }
 
 export class AnedyaScanKeysReq
