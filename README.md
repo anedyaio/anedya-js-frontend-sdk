@@ -1,6 +1,17 @@
+[<img alt="PyPI" src="https://img.shields.io/npm/v/%40anedyasystems%2Fanedya-frontend-sdk?style=for-the-badge">](https://www.npmjs.com/package/@anedyasystems/anedya-frontend-sdk)&nbsp;&nbsp;[<img alt="Anedya Documentation" src="https://img.shields.io/badge/Anedya-Documentation-blue?style=for-the-badge">](https://docs.anedya.io?utm_source=github&utm_medium=link&utm_campaign=github-sdk&utm_content=js)
+
+
+<!---<div style="width:20%; margin:0 auto;margin-bottom:50px;margin-top:50px;">-->
+<p align="center">
+    <img src="https://cdn.anedya.io/anedya_black_banner.png" alt="Logo">
+</p>
+<!--</div>-->
+
+
+
 # Anedya Frontend SDK
 
-A JavaScript/TypeScript SDK for interacting with the [Anedya](https://anedya.io) IoT platform. It covers fetching time-series data, managing a key-value store, checking device status, and receiving live data over a WebSocket stream.
+A JavaScript/TypeScript SDK for interacting with the [Anedya](https://anedya.io) IoT platform. It covers all the features required for front-end development, including time-series data, key-value store, device status, and live streaming.
 
 ---
 
@@ -123,7 +134,7 @@ if (res.isSuccess && res.isDataAvailable) {
 | variable  | `string` | Variable identifier                      |
 | from      | `number` | Start timestamp in **milliseconds**      |
 | to        | `number` | End timestamp in **milliseconds**        |
-| limit     | `number` | Max data points to return (default 10000)|
+| limit     | `number` | Max data points to return 10K (default 1000)|
 | order     | `string` | "asc" or "desc" (default "desc")         |
  
 ---
@@ -251,15 +262,16 @@ Checks whether the node is online based on when it last sent a heartbeat.
  
 ```js
 try {
-  const res = await node.getDeviceStatus(60); // online if heartbeat within last 60 seconds
-  if (res.isSuccess) {
-    const status = res.data[node.getNodeId()];
-    console.log("Online:", status.online);
-    console.log("Last heartbeat:", new Date(status.lastHeartbeat * 1000));
+    const res = await node_1.getDeviceStatus(10);
+    const data = res.data
+    console.log("Device Status:", data);
+  } catch (error) {
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error getting Device Status:", error);
+    }
   }
-} catch (error) {
-  console.error("Error getting device status:", error.message);
-}
 ```
  
 Pass a `lastContactThreshold` in seconds. If the device sent a heartbeat within that window, it is considered online.

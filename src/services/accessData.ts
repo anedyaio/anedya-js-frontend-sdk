@@ -72,7 +72,7 @@ export const getData = async (
     variable: accessDataReq.variable,
     from: Math.floor(accessDataReq.from / 1000),
     to: Math.floor(accessDataReq.to / 1000),
-    limit: accessDataReq.limit ?? 10000,
+    limit: accessDataReq.limit ?? 1000,
     order: accessDataReq.order ?? "desc",
   };
 
