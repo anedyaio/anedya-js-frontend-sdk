@@ -12,6 +12,7 @@ import {
   AnedyaGetDataResp,
   IAnedyaGetLatestDataReq,
   IAnedyaGetLatestDataResp,
+  AnedyaGetLatestDataResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders, _ITimeSeriesData, retry } from "../common";

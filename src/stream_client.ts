@@ -12,17 +12,55 @@ export interface IStreamSubscription {
   cancel(): void;
 }
 
+/**
+ * Geo-coordinate payload returned when a variable's dataType is GEO_COORDINATE (2).
+ * Fields use the familiar full names: lat = latitude, lng = longitude.
+ * (The server sends the shorter `lt`/`ln` keys over the wire; the SDK remaps them.)
+ */
+export interface GeoCoordinateData {
+  lat: number;
+  lng: number;
+}
+
+/**
+ * Numeric data-type codes carried in every variable stream frame.
+ * Use these instead of raw magic numbers when inspecting `VariableData.dataType`.
+ *
+ * @example
+ * ```ts
+ * if (data.dataType === AnedyaVariableType.GEO_COORDINATE) {
+ *   const geo = data.value as GeoCoordinateData;
+ *   console.log(geo.lat, geo.lng);
+ * }
+ * ```
+ */
+export const AnedyaVariableType = {
+  /** Floating-point number (e.g. temperature, humidity) */
+  FLOAT: 1,
+  /** Geo-coordinate object `{ lt: number; ln: number }` */
+  GEO_COORDINATE: 2,
+  /** Status string (e.g. "OK", "E387465-10B6-90-404") */
+  STATUS: 3,
+} as const;
+
+export type AnedyaVariableTypeValue = typeof AnedyaVariableType[keyof typeof AnedyaVariableType];
+
 export interface VariableData {
   nodeId: string | undefined;
   variable: string;
-  value: string | number | boolean | Uint8Array;
+  /** Primitive value for FLOAT/STATUS; `GeoCoordinateData` for GEO_COORDINATE. */
+  value: string | number | GeoCoordinateData;
   timestamp: number;
+  /** See `AnedyaVariableType` for named constants. */
   dataType: number;
 }
 
 export interface ValueStoreData {
-  nodeId: string | undefined;
-  scope: string | undefined;
+  nodeId: string | undefined;   // convenience alias — same as namespace.id
+  namespace: {
+    scope: string | undefined;
+    id: string | undefined;
+  };
   key: string;
   value: string | number | boolean;
   timestamp: number;
@@ -45,7 +83,8 @@ type StatusCallback = (status: "connected" | "disconnected" | "reconnecting") =>
 
 interface VariableSub {
   id: string;           // unique sub id for dedup/debug
-  variableId: string;
+  nodeIds: string[];
+  variableIds: string[];
   callback: VariableCallback;
   paused: boolean;
   active: boolean;
@@ -53,7 +92,8 @@ interface VariableSub {
 
 interface ValueStoreSub {
   id: string;
-  key: string;
+  nodeIds: string[];
+  keys: string[];
   callback: ValueStoreCallback;
   paused: boolean;
   active: boolean;
@@ -100,8 +140,7 @@ interface AllMessagesSub {
  * ```
  */
 export class AnedyaStreamClient {
-  readonly node: NewNode;                    // public — accessible inside callbacks
-  private readonly streamUrl: string;
+  readonly streamUrl: string;
   private readonly configHeaders: IConfigHeaders;
   private readonly streamId: string;
 
@@ -121,7 +160,6 @@ export class AnedyaStreamClient {
 
   constructor(
     client: NewClient,
-    node: NewNode,
     streamId: string,
     streamUrl: string,
   ) {
@@ -133,7 +171,6 @@ export class AnedyaStreamClient {
       authorizationMode,
     } = client;
 
-    this.node = node;
     this.streamId = streamId;
     this.streamUrl = streamUrl;
     this.configHeaders = {
@@ -175,21 +212,22 @@ export class AnedyaStreamClient {
     };
 
     this.ws.onmessage = (event: MessageEvent<ArrayBuffer>) => {
-      // ✅ Always ArrayBuffer because binaryType = "arraybuffer"
-      this.handleRawMessage(new Uint8Array(event.data));
+      const uint8 = new Uint8Array(event.data);
+      this.handleRawMessage(uint8);
+      // console.log("🚀 Raw message received (hex):", Array.from(uint8).map(b => b.toString(16).padStart(2, '0')).join(' '));
     };
 
-     this.ws.onerror = (event) => {
-       this.errorListeners.forEach((cb) => cb(new Error("WebSocket error occurred")));
-     };
+    this.ws.onerror = (event) => {
+      this.errorListeners.forEach((cb) => cb(new Error("WebSocket error occurred")));
+    };
 
 
     this.ws.onclose = (event) => {
-       //console.log("WS CLOSED", {
-  //   code: event.code,
-  //   reason: event.reason,
-  //   wasClean: event.wasClean,
-  // });
+      //console.log("WS CLOSED", {
+      //   code: event.code,
+      //   reason: event.reason,
+      //   wasClean: event.wasClean,
+      // });
       this.isConnected = false;
       this.emitStatus("disconnected");
       if (!this.destroyed) this.scheduleReconnect();
@@ -213,24 +251,26 @@ export class AnedyaStreamClient {
   // ─── Subscriptions ──────────────────────────────────────────────────────────
 
   /**
-   * Subscribe to variable data for a specific variable identifier.
+   * Subscribe to variable data for specific variables and nodes.
    *
-   * @param variableId  Must match the `variable` field in the decoded message (decoded?.v)
+   * @param nodeIds     List of node IDs to subscribe to. Use ["*"] for all nodes.
+   * @param variableIds List of variable identifiers to subscribe to. Use ["*"] for all variables.
    * @param callback    Receives VariableData on each matching message
    * @returns           IStreamSubscription — call .pause() / .resume() / .cancel() on it
    *
    * @example
    * ```ts
-   * const sub = stream.onVariable("temperature", (data) => {
-   *   //console.log("Temp:", data.value);
+   * const sub = stream.onVariable(["node1", "node2"], ["temperature"], (data) => {
+   *   //console.log(data.value);
    *   if (data.value > 100) sub.cancel(); // unsubscribe when done
    * });
    * ```
    */
-  onVariable(variableId: string, callback: VariableCallback): IStreamSubscription {
+  onVariable(nodeIds: string[], variableIds: string[], callback: VariableCallback): IStreamSubscription {
     const sub: VariableSub = {
       id: this.nextId(),
-      variableId,
+      nodeIds,
+      variableIds,
       callback,
       paused: false,
       active: true,
@@ -240,24 +280,26 @@ export class AnedyaStreamClient {
   }
 
   /**
-   * Subscribe to value store updates for a specific key.
+   * Subscribe to value store updates for specific keys and nodes.
    *
-   * @param key       Must match the `key` field in the decoded message (decoded?.key)
-   * @param callback  Receives ValueStoreData on each matching message
-   * @returns         IStreamSubscription — call .pause() / .resume() / .cancel() on it
+   * @param nodeIds     List of node IDs to subscribe to. Use ["*"] for all nodes.
+   * @param keys        List of keys to subscribe to. Use ["*"] for all keys.
+   * @param callback    Receives ValueStoreData on each matching message
+   * @returns           IStreamSubscription — call .pause() / .resume() / .cancel() on it
    *
    * @example
    * ```ts
-   * const sub = stream.onValueStore("threshold", (data) => {
+   * const sub = stream.onValueStore(["node1"], ["threshold"], (data) => {
    *   applyNewThreshold(data.value);
    *   sub.pause(); // pause after applying — resume later if needed
    * });
    * ```
    */
-  onValueStore(key: string, callback: ValueStoreCallback): IStreamSubscription {
+  onValueStore(nodeIds: string[], keys: string[], callback: ValueStoreCallback): IStreamSubscription {
     const sub: ValueStoreSub = {
       id: this.nextId(),
-      key,
+      nodeIds,
+      keys,
       callback,
       paused: false,
       active: true,
@@ -311,74 +353,131 @@ export class AnedyaStreamClient {
 
   // ─── Internal: message routing ───────────────────────────────────────────────
 
-private handleRawMessage(buffer: Uint8Array) {
-  if (buffer.length < 4) {
-    console.warn("Invalid message: too short");
-    return;
+  private matches(filters: string[], value: string | undefined): boolean {
+    if (filters.includes("*")) return true;
+    if (value === undefined) return false;
+    return filters.includes(value);
   }
 
-  const byte1 = buffer[0];
-  const byte2 = buffer[1];
-  const dataType = buffer[2];
-
-  // Log every raw frame so we can see what's arriving
-  //console.log("📥 Raw frame:", Array.from(buffer).map(b => b.toString(16).padStart(2,'0')).join(' '));
-  //console.log("Header:", `[0x${byte1.toString(16)}, 0x${byte2.toString(16)}]`, "dataType:", dataType);
-
-  if (byte1 === 0x00 && byte2 === 0x02) {
-    //console.log("→ Identified as VALUE STORE, decoding slice(2):", Array.from(buffer.slice(2)).map(b => b.toString(16).padStart(2,'0')).join(' '));
-    this.routeValueStore(buffer.slice(2));
-  } else if (byte1 === 0x00 && byte2 === 0x01) {
-    //console.log("→ Identified as VARIABLE, decoding slice(3):", Array.from(buffer.slice(3)).map(b => b.toString(16).padStart(2,'0')).join(' '));
-    this.routeVariableOrEvent(buffer.slice(3), dataType);
-  } else {
-    console.warn("Unknown message type:", byte1, byte2);
+  /**
+   * Convert a raw byte array to a node-ID string.
+   * - If the bytes are exactly 16 (UUID), format as xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx.
+   * - Otherwise fall back to a plain hex string.
+   */
+  private bytesToNodeId(bytes: Uint8Array): string {
+    const hex = Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+    if (bytes.length === 16) {
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+    }
+    return hex;
   }
-}
 
-private routeValueStore(payload: Uint8Array) {
-  try {
-    const decoded = decode(payload);
+  private decodeId(id: Uint8Array | undefined): string | undefined {
+    if (!id) return undefined;
+    const decoded = new TextDecoder().decode(id);
+    // If it's printable ASCII, use it; otherwise, fallback to hex.
+    if (/^[\x20-\x7E]*$/.test(decoded)) {
+      return decoded;
+    }
+    return Array.from(id)
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
 
-    const data: ValueStoreData = {
-      nodeId: decoded?.ns?.id
-        ? Array.from(decoded.ns.id as Uint8Array)
+  private handleRawMessage(buffer: Uint8Array) {
+
+    if (buffer.length < 4) {
+      console.warn("Invalid message: too short");
+      return;
+    }
+
+    const byte1 = buffer[0];
+    const byte2 = buffer[1];
+    const dataType = buffer[2];
+
+    // Log every raw frame so we can see what's arriving
+    //console.log("📥 Raw frame:", Array.from(buffer).map(b => b.toString(16).padStart(2,'0')).join(' '));
+    //console.log("Header:", `[0x${byte1.toString(16)}, 0x${byte2.toString(16)}]`, "dataType:", dataType);
+
+    if (byte1 === 0x00 && byte2 === 0x02) {
+      //console.log("→ Identified as VALUE STORE, decoding slice(2):", Array.from(buffer.slice(2)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+      this.routeValueStore(buffer.slice(2));
+    } else if (byte1 === 0x00 && byte2 === 0x01) {
+      //console.log("→ Identified as VARIABLE, decoding slice(3):", Array.from(buffer.slice(3)).map(b => b.toString(16).padStart(2,'0')).join(' '));
+      this.routeVariableOrEvent(buffer.slice(3), dataType);
+    } else {
+      console.warn("Unknown message type:", byte1, byte2);
+    }
+  }
+
+  private routeValueStore(payload: Uint8Array) {
+    try {
+      const decoded = decode(payload);
+
+      const rawNsId = decoded?.ns?.id;
+      const nsId: string | undefined = rawNsId == null
+        ? undefined
+        : typeof rawNsId === "string"
+          // ns.id arrives as a plain UTF-8 text string (e.g. "019f2839-ed79-…")
+          ? rawNsId
+          // fallback: byte-array encoding (hex-encode each byte)
+          : Array.from(rawNsId as Uint8Array)
             .map((b) => (b as number).toString(16).padStart(2, "0"))
-            .join("")
-        : undefined,
-      scope:     decoded?.ns?.scope,
-      key:       decoded?.key,
-      value:     decoded?.val,
-      timestamp: decoded?.ts,
-      type:      decoded?.t,
-    };
+            .join("");
 
-    if (this.globalPaused) return;
+      const data: ValueStoreData = {
+        nodeId: nsId,
+        namespace: {
+          scope: decoded?.ns?.scope,
+          id: nsId,
+        },
+        key: decoded?.key,
+        value: decoded?.val,
+        timestamp: decoded?.ts,
+        type: decoded?.t,
+      };
 
-    this.valueStoreSubs
-      .filter((s) => s.active && !s.paused && s.key === data.key)
-      .forEach((s) => s.callback(data));
+      if (this.globalPaused) return;
 
-    // Catch-all subscribers also receive value store messages, tagged so
-    // callers can tell them apart from variable messages.
-    this.allMessagesSubs
-      .filter((s) => s.active && !s.paused)
-      .forEach((s) => s.callback({ ...data, kind: "valuestore" }));
-  } catch (err) {
-    console.error("❌ ValueStore decode error:", err);
+      this.valueStoreSubs
+        .filter((s) => s.active && !s.paused && this.matches(s.nodeIds, data.namespace.id) && this.matches(s.keys, data.key))
+        .forEach((s) => s.callback(data));
+
+      // Catch-all subscribers also receive value store messages, tagged so
+      // callers can tell them apart from variable messages.
+      this.allMessagesSubs
+        .filter((s) => s.active && !s.paused)
+        .forEach((s) => s.callback({ ...data, kind: "valuestore" }));
+    } catch (err) {
+      console.error("❌ ValueStore decode error:", err);
+    }
   }
-}
   private routeVariableOrEvent(payload: Uint8Array, dataType: number) {
     try {
       const decoded = decode(payload);
+
+      const rawN = decoded?.n;
+      const nodeId: string | undefined = rawN == null
+        ? undefined
+        : typeof rawN === "string"
+          // n arrives as a plain UTF-8 text string — use directly
+          ? rawN
+          // raw bytes (16-byte UUID) — format with hyphens so it matches
+          // the UUID strings users pass to onVariable(nodeIds, ...)
+          : this.bytesToNodeId(rawN as Uint8Array);
+
+      // Remap geo-coordinate wire keys (lt/ln) to the public API keys (lat/lng).
+      let decodedValue = decoded?.d;
+      if (dataType === 2 && decodedValue != null && typeof decodedValue === "object" && "lt" in decodedValue) {
+        decodedValue = { lat: (decodedValue as any).lt, lng: (decodedValue as any).ln };
+      }
+
       const data: VariableData = {
-        nodeId: decoded?.n
-          ? Array.from(decoded.n as Uint8Array)
-              .map((b) => (b as number).toString(16).padStart(2, "0"))
-              .join("")
-          : undefined,
-        variable:  decoded?.v,
-        value:     decoded?.d,
+        nodeId,
+        variable: decoded?.v,
+        value: decodedValue,
         timestamp: decoded?.ts,
         dataType,
       };
@@ -387,7 +486,7 @@ private routeValueStore(payload: Uint8Array) {
 
       // Per-variable subscribers
       this.variableSubs
-        .filter((s) => s.active && !s.paused && s.variableId === data.variable)
+        .filter((s) => s.active && !s.paused && this.matches(s.nodeIds, data.nodeId) && this.matches(s.variableIds, data.variable))
         .forEach((s) => s.callback(data));
 
       // Catch-all subscribers
@@ -398,6 +497,7 @@ private routeValueStore(payload: Uint8Array) {
       console.error("Variable decode error:", err);
     }
   }
+
 
   // ─── Internal: reconnect ────────────────────────────────────────────────────
 
@@ -427,7 +527,7 @@ private routeValueStore(payload: Uint8Array) {
    */
   private makeHandle(sub: { paused: boolean; active: boolean }): IStreamSubscription {
     return {
-      pause:  () => { sub.paused = true; },
+      pause: () => { sub.paused = true; },
       resume: () => { sub.paused = false; },
       cancel: () => { sub.active = false; },
     };

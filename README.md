@@ -284,20 +284,20 @@ Pass a `lastContactThreshold` in seconds. If the device sent a heartbeat within 
 The stream client opens a WebSocket connection and delivers incoming data to subscriber callbacks in real time.
 
 ### Stream Setup
-
+ 
 ```js
 const stream = anedya.newStream(
   client,
-  node,
   "your-stream-id",
   "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
 );
-
+ 
 stream.onStatus((status) => console.log("Status:", status));
 stream.onError((err)   => console.error("Error:", err));
-
+ 
 await stream.connect();
 ```
+
 
 To close the stream permanently:
 
@@ -308,26 +308,28 @@ stream.disconnect(); // no reconnect will happen after this
 ---
 
 ### `onVariable`
-
-Fires whenever a message arrives for a specific variable identifier.
-
+ 
+Fires whenever a message arrives for a specific set of variables and nodes.
+ 
 ```js
-const sub = stream.onVariable("temperature", (data) => {
+const sub = stream.onVariable(["node1", "node2"], ["temperature"], (data) => {
   console.log(data.value, data.timestamp);
 });
 ```
 
+
 ---
 
 ### `onValueStore`
-
-Fires whenever a value store update arrives for a specific key.
-
+ 
+Fires whenever a value store update arrives for a specific set of keys and nodes.
+ 
 ```js
-const sub = stream.onValueStore("threshold", (data) => {
+const sub = stream.onValueStore(["node1"], ["threshold"], (data) => {
   console.log("New threshold:", data.value);
 });
 ```
+
 
 ---
 

@@ -3,23 +3,23 @@ const {
   AnedyaError,
   AnedyaScope,
   AnedyaDataType,
+  AnedyaVariableType,
 } = require("@anedyasystems/anedya-frontend-sdk");
 
-
-const streamId = ""
-const streamUrl = ""
-const tokenId = ""
-const token = ""
-const nodeId = ""
-const variableIdentifier = ""
-const valueStoreKey = ""
+const streamId = "019f31ed-1ca3-71c9-ac15-84fa01fc905d"
+const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+const tokenId = "qUM1uFhwYXB5GF2JMdzVBG6m"
+const token = "jL5vBAWk3c4vmgGPUBqzsFKTGk3TSxesF1SSLexCj3ju2A3BIFd6aUjNmPRS8O9w"
+const nodeId = ["019f283a-6d5b-7a7e-a445-e6bf024cc051", "019f2839-ed79-7eef-a12c-465c2ce431bb"]
+const variables = ["temperature", "status", "location"]
+const vsKey = ["vs-test", "test"]
 
 // Initialize Anedya Client
 const anedya = new Anedya();
 const connect_config = anedya.newConfig(tokenId, token);
 const client = anedya.newClient(connect_config);
-const node_1 = anedya.newNode(client, nodeId);
-const stream = anedya.newStream(client, node_1, streamId, streamUrl);
+const node_1 = anedya.newNode(client, nodeId[0]);
+const stream = anedya.newStream(client, streamId, streamUrl);
 
 // Example function to get Node ID
 async function getNodeId() {
@@ -37,7 +37,7 @@ async function getData() {
     const currentTime = Date.now(); // time in milliseconds
     const twentyFourHoursDelayedTime = currentTime - 86400 * 1000;
     const res = await node_1.getData({
-      variable: variableIdentifier,
+      variable: variables[0],
       from: twentyFourHoursDelayedTime,
       to: currentTime,
       limit: 10
@@ -60,7 +60,7 @@ async function getData() {
 // Example function to get the latest data
 async function getLatestData() {
   try {
-    const res = await node_1.getLatestData(variableIdentifier);
+    const res = await node_1.getLatestData(variables[0]);
     if (res.isDataAvailable) {
       console.log("Latest Data:", res.data);
     } else {
@@ -158,43 +158,41 @@ async function getDeviceStatus() {
   }
 }
 
-// Function to get snapshot
-async function getSnapshot() {
-  try {
-    const currentTime = Math.floor(Date.now() / 1000); //time in seconds
-    const res = await node_1.getSnapshot({
-      time: currentTime,
-      variable: variableIdentifier
-    });
-    console.log("Snapshot:", res);
-  } catch (error) {
-    if (error instanceof AnedyaError) {
-      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
-    } else {
-      console.error("Error getting Snapshot:", error);
-    }
-  }
-}
-
-
 async function getStream() {
   // stream is created at the top of the file
 
   stream.onStatus((status) => console.log("🔌 Status:", status));
   stream.onError((err) => console.error("Error:", err));
 
-  const tempSub = stream.onVariable(variableIdentifier, (data) => {
-    console.log("🌡️ Temp:", data.value, "@", data.timestamp);
-    if (data.value > 80) {
-      tempSub.pause();
-      setTimeout(() => tempSub.resume(), 10_000);
+  const tempSub = stream.onVariable(nodeId, variables, (data) => {
+    switch (data.dataType) {
+      case AnedyaVariableType.FLOAT:
+        console.log(`[FLOAT]  ${data.variable} = ${data.value}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
+
+      case AnedyaVariableType.GEO_COORDINATE: {
+        const geo = data.value; // { lat, lng }
+        console.log(`[GEO]    ${data.variable} → lat: ${geo.lat}, lng: ${geo.lng}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
+      }
+
+      case AnedyaVariableType.STATUS:
+        console.log(`[STATUS] ${data.variable} = "${data.value}"  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
+
+      default:
+        console.log(`[TYPE:${data.dataType}] ${data.variable} = ${JSON.stringify(data.value)}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
     }
   });
 
-  const thresholdSub = stream.onValueStore(valueStoreKey, (data) => {
-    console.log("🗄️ New threshold:", data.value);
+  const thresholdSub = stream.onValueStore(nodeId, vsKey, (data) => {
+    console.log("ValueStore changed Key: ", data.key, "Value:", data.value);
+    console.log("  nodeId         :", data.nodeId);
+    console.log("  namespace.scope:", data.namespace.scope);
+    console.log("  namespace.id   :", data.namespace.id);
     thresholdSub.cancel();
   });
+
 
   // Fires for EVERY incoming message — both variable and value store frames.
   // data.kind tells you which shape you got: "variable" or "valuestore".

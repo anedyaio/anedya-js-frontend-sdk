@@ -35,6 +35,11 @@ import{
   AnedyaDataType,
 }from "./anedya_constant"
 
+import {
+  GeoCoordinateData,
+  AnedyaVariableType,
+} from "./stream_client";
+
 import { AnedyaError, AnedyaErrorCodes } from "./errors";
 
 import {getAnedyaErrorMessage} from "./utility";
@@ -66,9 +71,12 @@ export {
   AnedyaSetKeyResp,
   IAnedyaGetKeyResp,
   AnedyaGetKeyResp,
-   AnedyaError,
-   AnedyaErrorCodes,
+  AnedyaError,
+  AnedyaErrorCodes,
 
+  // Stream types
+  GeoCoordinateData,
+  AnedyaVariableType,
 };
 
 
