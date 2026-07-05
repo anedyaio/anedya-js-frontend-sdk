@@ -1,5 +1,5 @@
 import { anedyaSignature } from "../anedya_signature";
-import { IConfigHeaders, retry } from "../common";
+import { IConfigHeaders } from "../common";
 import {
   IAnedyaGetSnapshotReq,
   IAnedyaGetSnapshotResp,
@@ -8,11 +8,7 @@ import {
   NodeVariableValues,
 } from "../models";
 import { validateResponse } from "../error_handler";
-import {
-  AnedyaError,
-  NetworkError,
-  ServerError,
-} from "../errors";
+import { AnedyaError } from "../errors";
 
 // ------------------------ Device Status -------------------------
 interface _AnedyaGetSnapshotResp {
@@ -85,5 +81,5 @@ export const getSnapshot = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };

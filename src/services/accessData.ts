@@ -15,13 +15,9 @@ import {
   AnedyaGetLatestDataResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
-import { IConfigHeaders, _ITimeSeriesData, retry } from "../common";
+import { IConfigHeaders, _ITimeSeriesData } from "../common";
 import { validateResponse } from "../error_handler";
-import {
-  AnedyaError,
-  NetworkError,
-  ServerError,
-} from "../errors";
+import { AnedyaError } from "../errors";
 
 // ------------------------------ Get Data -----------------------------
 
@@ -129,7 +125,7 @@ export const getData = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };
 
 // ------------------------------ Get Latest Data -----------------------------
@@ -224,5 +220,5 @@ export const fetchLatestData = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };

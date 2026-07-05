@@ -16,13 +16,9 @@ import {
   AnedyaGetKeyResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
-import { IConfigHeaders, retry } from "../common";
+import { IConfigHeaders } from "../common";
 import { validateResponse } from "../error_handler";
-import {
-  AnedyaError,
-  NetworkError,
-  ServerError,
-} from "../errors";
+import { AnedyaError } from "../errors";
 
 // ------------------------------ Set Value-Store -----------------------------
 interface _AnedyaSetKeyResp {
@@ -92,7 +88,7 @@ export const setKey = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };
 
 // ------------------------------ Get Value-Store -----------------------------
@@ -178,7 +174,7 @@ export const getKey = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };
 
 // ------------------------------ Delete Value-Store -----------------------------
@@ -247,7 +243,7 @@ export const deleteKey = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };
 
 // ------------------------------  Scan Value-Store -----------------------------
@@ -329,5 +325,5 @@ export const scanKeys = async (
     return res;
   };
 
-  return retry(executeRequest, 3, 1000, [NetworkError, ServerError]);
+  return executeRequest();
 };
