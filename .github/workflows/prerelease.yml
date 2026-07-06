@@ -133,7 +133,10 @@ jobs:
       # npm actually reads it. The setup-node step only writes the reference.
       - name: Publish Prerelease to npm (beta)
         if: steps.version_check.outputs.changed == 'true'
-        run: npx changeset publish --tag beta
+        # Do NOT pass --tag beta here. When Changesets is in pre mode, it reads
+        # the tag from pre.json automatically (the tag set during `pre enter beta`).
+        # Passing --tag explicitly causes: "Releasing under custom tag is not allowed in pre mode"
+        run: npx changeset publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
