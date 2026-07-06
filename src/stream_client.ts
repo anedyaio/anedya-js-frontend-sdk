@@ -79,7 +79,7 @@ type ValueStoreCallback = (data: ValueStoreData) => void;
 type AllMessagesCallback = (data: AllMessagesData) => void;
 type ErrorCallback = (err: Error) => void;
 type StatusCallback = (
-  status: "connected" | "disconnected" | "reconnecting"
+  status: "connected" | "disconnected" | "reconnecting",
 ) => void;
 
 // ─── Internal subscription records ───────────────────────────────────────────
@@ -189,7 +189,7 @@ export class AnedyaStreamClient {
     const signature = await anedyaSignature(
       null,
       this.configHeaders,
-      currentTime
+      currentTime,
     );
 
     // Browser WebSocket doesn't support custom headers — pass as query params.
@@ -202,7 +202,7 @@ export class AnedyaStreamClient {
     url.searchParams.set("x-anedya-timestamp", currentTime.toString());
     url.searchParams.set(
       "x-anedya-signatureversion",
-      this.configHeaders.signatureVersion
+      this.configHeaders.signatureVersion,
     );
 
     this.ws = new WebSocket(url.toString());
@@ -223,7 +223,7 @@ export class AnedyaStreamClient {
 
     this.ws.onerror = (event) => {
       this.errorListeners.forEach((cb) =>
-        cb(new Error("WebSocket error occurred"))
+        cb(new Error("WebSocket error occurred")),
       );
     };
 
@@ -278,7 +278,7 @@ export class AnedyaStreamClient {
   onVariable(
     nodeIds: string[],
     variableIds: string[],
-    callback: VariableCallback
+    callback: VariableCallback,
   ): IStreamSubscription {
     const sub: VariableSub = {
       id: this.nextId(),
@@ -311,7 +311,7 @@ export class AnedyaStreamClient {
   onValueStore(
     nodeIds: string[],
     keys: string[],
-    callback: ValueStoreCallback
+    callback: ValueStoreCallback,
   ): IStreamSubscription {
     const sub: ValueStoreSub = {
       id: this.nextId(),
@@ -388,7 +388,7 @@ export class AnedyaStreamClient {
     if (bytes.length === 16) {
       return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
         12,
-        16
+        16,
       )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     }
     return hex;
@@ -440,12 +440,12 @@ export class AnedyaStreamClient {
         rawNsId == null
           ? undefined
           : typeof rawNsId === "string"
-          ? // ns.id arrives as a plain UTF-8 text string (e.g. "019f2839-ed79-…")
-            rawNsId
-          : // fallback: byte-array encoding (hex-encode each byte)
-            Array.from(rawNsId as Uint8Array)
-              .map((b) => (b as number).toString(16).padStart(2, "0"))
-              .join("");
+            ? // ns.id arrives as a plain UTF-8 text string (e.g. "019f2839-ed79-…")
+              rawNsId
+            : // fallback: byte-array encoding (hex-encode each byte)
+              Array.from(rawNsId as Uint8Array)
+                .map((b) => (b as number).toString(16).padStart(2, "0"))
+                .join("");
 
       const data: ValueStoreData = {
         nodeId: nsId,
@@ -467,7 +467,7 @@ export class AnedyaStreamClient {
             s.active &&
             !s.paused &&
             this.matches(s.nodeIds, data.namespace.id) &&
-            this.matches(s.keys, data.key)
+            this.matches(s.keys, data.key),
         )
         .forEach((s) => s.callback(data));
 
@@ -489,11 +489,11 @@ export class AnedyaStreamClient {
         rawN == null
           ? undefined
           : typeof rawN === "string"
-          ? // n arrives as a plain UTF-8 text string — use directly
-            rawN
-          : // raw bytes (16-byte UUID) — format with hyphens so it matches
-            // the UUID strings users pass to onVariable(nodeIds, ...)
-            this.bytesToNodeId(rawN as Uint8Array);
+            ? // n arrives as a plain UTF-8 text string — use directly
+              rawN
+            : // raw bytes (16-byte UUID) — format with hyphens so it matches
+              // the UUID strings users pass to onVariable(nodeIds, ...)
+              this.bytesToNodeId(rawN as Uint8Array);
 
       // Remap geo-coordinate wire keys (lt/ln) to the public API keys (lat/lng).
       let decodedValue = decoded?.d;
@@ -526,7 +526,7 @@ export class AnedyaStreamClient {
             s.active &&
             !s.paused &&
             this.matches(s.nodeIds, data.nodeId) &&
-            this.matches(s.variableIds, data.variable)
+            this.matches(s.variableIds, data.variable),
         )
         .forEach((s) => s.callback(data));
 

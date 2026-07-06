@@ -60,7 +60,7 @@ export const getData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: IAnedyaGetDataReq
+  accessDataReq: IAnedyaGetDataReq,
 ): Promise<AnedyaGetDataResp> => {
   const url = `${baseUrl}/data/getData`;
 
@@ -77,7 +77,7 @@ export const getData = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -105,7 +105,7 @@ export const getData = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 
@@ -169,7 +169,7 @@ export const fetchLatestData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: IAnedyaGetLatestDataReq
+  accessDataReq: IAnedyaGetLatestDataReq,
 ): Promise<AnedyaGetLatestDataResp> => {
   const url = `${baseUrl}/data/latest`;
 
@@ -181,7 +181,7 @@ export const fetchLatestData = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -208,7 +208,7 @@ export const fetchLatestData = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 

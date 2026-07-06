@@ -62,7 +62,7 @@ export interface INode {
 
   /** Get device status (e.g., last contact timestamp) */
   getDeviceStatus(
-    lastContactThreshold: number
+    lastContactThreshold: number,
   ): Promise<AnedyaGetDeviceStatusResp>;
 
   /**
@@ -143,7 +143,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -163,7 +163,7 @@ export class NewNode implements INode {
    * ```
    */
   async getLatestData(
-    variableIdentifier: string
+    variableIdentifier: string,
   ): Promise<AnedyaGetLatestDataResp> {
     const accessDataReq: IAnedyaGetLatestDataReq = {
       variable: variableIdentifier,
@@ -172,7 +172,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -216,7 +216,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -240,7 +240,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -266,13 +266,13 @@ export class NewNode implements INode {
    * ```
    */
   async deleteKey(
-    reqConfig: IAnedyaDeleteKeyReq
+    reqConfig: IAnedyaDeleteKeyReq,
   ): Promise<AnedyaDeleteKeyResp> {
     return await deleteKey(
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -307,7 +307,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -347,13 +347,13 @@ export class NewNode implements INode {
    * ```
    */
   async getDeviceStatus(
-    lastContactThreshold: number
+    lastContactThreshold: number,
   ): Promise<AnedyaGetDeviceStatusResp> {
     return await getDeviceStatus(
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      lastContactThreshold
+      lastContactThreshold,
     );
   }
 
@@ -399,13 +399,13 @@ export class NewNode implements INode {
    * ```
    */
   async getSnapshot(
-    reqConfig: IAnedyaGetSnapshotReq
+    reqConfig: IAnedyaGetSnapshotReq,
   ): Promise<AnedyaGetSnapshotResp> {
     return await getSnapshot(
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 }

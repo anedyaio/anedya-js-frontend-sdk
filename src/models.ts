@@ -24,11 +24,11 @@ export class AnedyaGetDataReq implements IAnedyaGetDataReq {
     public from: number,
     public to: number,
     public limit: number = 10000,
-    public order: "asc" | "desc" = "desc"
+    public order: "asc" | "desc" = "desc",
   ) {
     if (order !== "asc" && order !== "desc") {
       throw new Error(
-        "Invalid order value. It should be either 'asc' or 'desc'."
+        "Invalid order value. It should be either 'asc' or 'desc'.",
       );
     }
     if (limit < 1) {
@@ -36,7 +36,7 @@ export class AnedyaGetDataReq implements IAnedyaGetDataReq {
     }
     if (from > to) {
       throw new Error(
-        "Invalid time range. 'from' should be less than or equal to 'to'."
+        "Invalid time range. 'from' should be less than or equal to 'to'.",
       );
     }
   }
@@ -118,11 +118,11 @@ export class AnedyaSetKeyReq implements IAnedyaSetKeyReq {
     },
     public key: string,
     public value: string | number | boolean,
-    public type: "string" | "binary" | "float" | "boolean"
+    public type: "string" | "binary" | "float" | "boolean",
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
     if (
@@ -132,7 +132,7 @@ export class AnedyaSetKeyReq implements IAnedyaSetKeyReq {
       this.type !== "boolean"
     ) {
       throw new Error(
-        "Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'."
+        "Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'.",
       );
     }
   }
@@ -167,11 +167,11 @@ export class AnedyaGetKeyReq implements IAnedyaGetKeyReq {
       scope: "global" | "node";
       id?: string;
     },
-    public key: string
+    public key: string,
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -233,11 +233,11 @@ export class AnedyaDeleteKeyReq implements IAnedyaDeleteKeyReq {
       scope: "global" | "node";
       id?: string;
     },
-    public key: string
+    public key: string,
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -283,14 +283,14 @@ export class AnedyaScanKeysReq implements IAnedyaScanKeysReq {
     public orderby: "namespace" | "key" | "created",
     public order: "asc" | "desc",
     public limit: number,
-    public offset: number
+    public offset: number,
   ) {
     if (
       this.filter.namespace.scope !== "global" &&
       this.filter.namespace.scope !== "node"
     ) {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -352,11 +352,14 @@ export interface IAnedyaGetSnapshotReq {
 }
 
 export class AnedyaGetSnapshotReq implements IAnedyaGetSnapshotReq {
-  constructor(public time: number, public variable: string) {
+  constructor(
+    public time: number,
+    public variable: string,
+  ) {
     // Validate timestamp
     if (!Number.isFinite(time) || time <= 0) {
       throw new Error(
-        "Invalid time: must be a positive number (UNIX timestamp)."
+        "Invalid time: must be a positive number (UNIX timestamp).",
       );
     }
     const currentUnixTime = Math.floor(Date.now() / 1000);

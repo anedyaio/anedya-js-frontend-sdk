@@ -31,13 +31,13 @@ export async function retry<T>(
   fn: () => Promise<T>,
   retries: number = 3,
   delay: number = 1000,
-  retryableErrors: Array<new (...args: any[]) => Error> = [Error]
+  retryableErrors: Array<new (...args: any[]) => Error> = [Error],
 ): Promise<T> {
   try {
     return await fn();
   } catch (error) {
     const isRetryable = retryableErrors.some(
-      (ErrorClass) => error instanceof ErrorClass
+      (ErrorClass) => error instanceof ErrorClass,
     );
     if (retries <= 0 || !isRetryable) {
       throw error;

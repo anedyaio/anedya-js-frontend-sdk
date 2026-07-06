@@ -3,7 +3,7 @@ import { IConfigHeaders } from "./common";
 export const anedyaSignature = async (
   requestData: unknown,
   configHeaders: IConfigHeaders,
-  currentTime: number
+  currentTime: number,
 ): Promise<string> => {
   try {
     let bodyBytes: Uint8Array;
@@ -20,7 +20,7 @@ export const anedyaSignature = async (
     // SHA-256 of body
     const bodyHashBuffer = await crypto.subtle.digest(
       "SHA-256",
-      bodyBytes as BufferSource
+      bodyBytes as BufferSource,
     );
     const bodyHashBytes = new Uint8Array(bodyHashBuffer);
 
@@ -33,26 +33,26 @@ export const anedyaSignature = async (
       bodyHashBytes.length +
         timeBytes.length +
         configHeaders.signatureVersionBytes.length +
-        configHeaders.tokenBytes.length
+        configHeaders.tokenBytes.length,
     );
 
     combinedBytes.set(bodyHashBytes, 0);
     combinedBytes.set(timeBytes, bodyHashBytes.length);
     combinedBytes.set(
       configHeaders.signatureVersionBytes,
-      bodyHashBytes.length + timeBytes.length
+      bodyHashBytes.length + timeBytes.length,
     );
     combinedBytes.set(
       configHeaders.tokenBytes,
       bodyHashBytes.length +
         timeBytes.length +
-        configHeaders.signatureVersionBytes.length
+        configHeaders.signatureVersionBytes.length,
     );
 
     // Final hash
     const combinedHashBuffer = await crypto.subtle.digest(
       "SHA-256",
-      combinedBytes
+      combinedBytes,
     );
 
     return Array.from(new Uint8Array(combinedHashBuffer))

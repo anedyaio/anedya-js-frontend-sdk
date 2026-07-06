@@ -5,7 +5,7 @@ export class AnedyaError extends Error {
   constructor(
     public message: string,
     public reasonCode: string = "UNKNOWN_ERROR",
-    public httpStatus?: number
+    public httpStatus?: number,
   ) {
     super(message);
     this.name = "AnedyaError";
@@ -35,7 +35,7 @@ export class AuthenticationError extends AnedyaError {
   constructor(
     message: string,
     reasonCode: string = "UNAUTHORIZED",
-    httpStatus: number = 401
+    httpStatus: number = 401,
   ) {
     super(message, reasonCode, httpStatus);
     this.name = "AuthenticationError";
@@ -59,7 +59,7 @@ export class NotFoundError extends AnedyaError {
   constructor(
     message: string,
     reasonCode: string = "NOT_FOUND",
-    httpStatus: number = 404
+    httpStatus: number = 404,
   ) {
     super(message, reasonCode, httpStatus);
     this.name = "NotFoundError";
@@ -73,7 +73,7 @@ export class BadRequestError extends AnedyaError {
   constructor(
     message: string,
     reasonCode: string = "BAD_REQUEST",
-    httpStatus: number = 400
+    httpStatus: number = 400,
   ) {
     super(message, reasonCode, httpStatus);
     this.name = "BadRequestError";
@@ -87,7 +87,7 @@ export class ServerError extends AnedyaError {
   constructor(
     message: string,
     reasonCode: string = "SERVER_ERROR",
-    httpStatus: number = 500
+    httpStatus: number = 500,
   ) {
     super(message, reasonCode, httpStatus);
     this.name = "ServerError";

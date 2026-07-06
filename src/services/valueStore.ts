@@ -32,7 +32,7 @@ export const setKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaSetKeyReq
+  reqConfig: IAnedyaSetKeyReq,
 ): Promise<AnedyaSetKeyResp> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
@@ -55,7 +55,7 @@ export const setKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -83,7 +83,7 @@ export const setKey = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 
@@ -117,7 +117,7 @@ export const getKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaGetKeyReq
+  reqConfig: IAnedyaGetKeyReq,
 ): Promise<AnedyaGetKeyResp> => {
   const url = `${baseUrl}/valuestore/getValue`;
   let Id;
@@ -138,7 +138,7 @@ export const getKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -166,7 +166,7 @@ export const getKey = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 
@@ -197,7 +197,7 @@ export const deleteKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaDeleteKeyReq
+  reqConfig: IAnedyaDeleteKeyReq,
 ): Promise<AnedyaDeleteKeyResp> => {
   const url = `${baseUrl}/valuestore/delete`;
   let Id;
@@ -218,7 +218,7 @@ export const deleteKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -246,7 +246,7 @@ export const deleteKey = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 
@@ -274,7 +274,7 @@ export const scanKeys = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaScanKeysReq
+  reqConfig: IAnedyaScanKeysReq,
 ): Promise<AnedyaScanKeysResp> => {
   const url = `${baseUrl}/valuestore/scan`;
   let Id;
@@ -300,7 +300,7 @@ export const scanKeys = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -328,7 +328,7 @@ export const scanKeys = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 

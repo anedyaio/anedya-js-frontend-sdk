@@ -16,7 +16,7 @@ interface IAnedya {
   newStream(
     client: NewClient,
     streamId: string,
-    streamUrl: string
+    streamUrl: string,
   ): AnedyaStreamClient;
 }
 
@@ -36,7 +36,7 @@ export class Anedya implements IAnedya {
   newStream(
     client: NewClient,
     streamId: string,
-    streamUrl: string
+    streamUrl: string,
   ): AnedyaStreamClient {
     return new AnedyaStreamClient(client, streamId, streamUrl);
   }

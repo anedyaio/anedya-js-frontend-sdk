@@ -40,7 +40,7 @@ export async function validateResponse(response: Response): Promise<void> {
     throw new AnedyaError(
       errorBody.error,
       errorBody.reasonCode,
-      response.status
+      response.status,
     );
   }
 
@@ -49,7 +49,7 @@ export async function validateResponse(response: Response): Promise<void> {
     throw new AuthenticationError(
       "Unauthorized access",
       "UNAUTHORIZED",
-      response.status
+      response.status,
     );
   }
   if (response.status === 404) {
@@ -63,6 +63,6 @@ export async function validateResponse(response: Response): Promise<void> {
   }
   throw new NetworkError(
     `Request failed with status ${response.status}`,
-    response.status
+    response.status,
   );
 }

@@ -20,7 +20,7 @@ export const getDeviceStatus = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  lastContactThreshold: number
+  lastContactThreshold: number,
 ): Promise<AnedyaGetDeviceStatusResp> => {
   const url = `${baseUrl}/health/status`;
   const requestData = {
@@ -31,7 +31,7 @@ export const getDeviceStatus = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   const executeRequest = async () => {
@@ -59,7 +59,7 @@ export const getDeviceStatus = async (
       throw new AnedyaError(
         responseData.error,
         responseData.reasonCode,
-        response.status
+        response.status,
       );
     }
 
