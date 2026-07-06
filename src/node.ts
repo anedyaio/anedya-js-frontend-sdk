@@ -138,7 +138,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -164,7 +164,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      accessDataReq
+      accessDataReq,
     );
   }
 
@@ -207,7 +207,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -240,7 +240,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -273,7 +273,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -309,7 +309,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 
@@ -353,7 +353,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      lastContactThreshold
+      lastContactThreshold,
     );
   }
 
@@ -403,7 +403,7 @@ export class NewNode implements INode {
       this.#baseUrl,
       this.#configHeaders,
       [this.#nodeId],
-      reqConfig
+      reqConfig,
     );
   }
 }

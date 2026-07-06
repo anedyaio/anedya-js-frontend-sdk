@@ -24,11 +24,11 @@ export class AnedyaGetDataReq implements IAnedyaGetDataReq {
     public from: number,
     public to: number,
     public limit: number = 10000,
-    public order: "asc" | "desc" = "desc"
+    public order: "asc" | "desc" = "desc",
   ) {
     if (order !== "asc" && order !== "desc") {
       throw new Error(
-        "Invalid order value. It should be either 'asc' or 'desc'."
+        "Invalid order value. It should be either 'asc' or 'desc'.",
       );
     }
     if (limit < 1) {
@@ -36,7 +36,7 @@ export class AnedyaGetDataReq implements IAnedyaGetDataReq {
     }
     if (from > to) {
       throw new Error(
-        "Invalid time range. 'from' should be less than or equal to 'to'."
+        "Invalid time range. 'from' should be less than or equal to 'to'.",
       );
     }
   }
@@ -54,9 +54,7 @@ export interface IAnedyaGetDataResp {
 /**
  * Response object for fetching data.
  */
-export class AnedyaGetDataResp
-  implements IAnedyaGetDataResp
-{
+export class AnedyaGetDataResp implements IAnedyaGetDataResp {
   isSuccess: boolean;
   error: _IError;
   isDataAvailable: boolean;
@@ -98,7 +96,7 @@ export class AnedyaGetLatestDataResp implements IAnedyaGetLatestDataResp {
 
 // ================================ Value Store ================================
 // ------------ Set Value-Store ------------
-export interface IAnedyaSetKeyReq{
+export interface IAnedyaSetKeyReq {
   namespace: {
     scope: "global" | "node";
     id?: string;
@@ -116,11 +114,11 @@ export class AnedyaSetKeyReq implements IAnedyaSetKeyReq {
     },
     public key: string,
     public value: string | number | boolean,
-    public type: "string" | "binary" | "float" | "boolean"
+    public type: "string" | "binary" | "float" | "boolean",
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
     if (
@@ -130,7 +128,7 @@ export class AnedyaSetKeyReq implements IAnedyaSetKeyReq {
       this.type !== "boolean"
     ) {
       throw new Error(
-        "Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'."
+        "Invalid type value. It should be either 'string', 'binary', 'float', or 'boolean'.",
       );
     }
   }
@@ -165,11 +163,11 @@ export class AnedyaGetKeyReq implements IAnedyaGetKeyReq {
       scope: "global" | "node";
       id?: string;
     },
-    public key: string
+    public key: string,
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -231,11 +229,11 @@ export class AnedyaDeleteKeyReq implements IAnedyaDeleteKeyReq {
       scope: "global" | "node";
       id?: string;
     },
-    public key: string
+    public key: string,
   ) {
     if (this.namespace.scope !== "global" && this.namespace.scope !== "node") {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -246,7 +244,7 @@ export interface IAnedyaDeleteKeyResp {
   error: _IError;
 }
 
-export class AnedyaDeleteKeyResp implements IAnedyaDeleteKeyResp{
+export class AnedyaDeleteKeyResp implements IAnedyaDeleteKeyResp {
   isSuccess: boolean;
   error: _IError;
   constructor() {
@@ -270,9 +268,7 @@ export interface IAnedyaScanKeysReq {
   offset: number;
 }
 
-export class AnedyaScanKeysReq
-  implements IAnedyaScanKeysReq
-{
+export class AnedyaScanKeysReq implements IAnedyaScanKeysReq {
   constructor(
     public filter: {
       namespace: {
@@ -283,14 +279,14 @@ export class AnedyaScanKeysReq
     public orderby: "namespace" | "key" | "created",
     public order: "asc" | "desc",
     public limit: number,
-    public offset: number
+    public offset: number,
   ) {
     if (
       this.filter.namespace.scope !== "global" &&
       this.filter.namespace.scope !== "node"
     ) {
       throw new Error(
-        "Invalid namespace scope. It should be either 'global' or 'node'."
+        "Invalid namespace scope. It should be either 'global' or 'node'.",
       );
     }
   }
@@ -305,9 +301,7 @@ export interface IAnedyaScanKeysResp {
   next: number;
 }
 
-export class AnedyaScanKeysResp
-  implements IAnedyaScanKeysResp
-{
+export class AnedyaScanKeysResp implements IAnedyaScanKeysResp {
   isSuccess: boolean;
   error: _IError;
   count: number;
@@ -332,9 +326,7 @@ export interface IAnedyaGetDeviceStatusResp {
   data: any;
 }
 
-export class AnedyaGetDeviceStatusResp
-  implements IAnedyaGetDeviceStatusResp
-{
+export class AnedyaGetDeviceStatusResp implements IAnedyaGetDeviceStatusResp {
   isSuccess: boolean;
   error: _IError;
   data: any;
@@ -355,13 +347,14 @@ export class AnedyaGetSnapshotReq implements IAnedyaGetSnapshotReq {
   constructor(
     public time: number,
     public variable: string,
-
   ) {
-     // Validate timestamp
+    // Validate timestamp
     if (!Number.isFinite(time) || time <= 0) {
-      throw new Error("Invalid time: must be a positive number (UNIX timestamp).");
+      throw new Error(
+        "Invalid time: must be a positive number (UNIX timestamp).",
+      );
     }
-     const currentUnixTime = Math.floor(Date.now() / 1000);
+    const currentUnixTime = Math.floor(Date.now() / 1000);
     if (time > currentUnixTime) {
       throw new Error("Invalid time: timestamp cannot be in the future.");
     }
@@ -373,33 +366,30 @@ export class AnedyaGetSnapshotReq implements IAnedyaGetSnapshotReq {
   }
 }
 
-
 export interface NodeVariableValue {
-  node: string;        // Node ID
+  node: string; // Node ID
   value: number | string | boolean | Uint8Array; // Variable value
-  timestamp: number;   // Unix timestamp
+  timestamp: number; // Unix timestamp
 }
 
 export type NodeVariableValues = NodeVariableValue[];
 
 export interface IAnedyaGetSnapshotResp {
   isSuccess: boolean;
-    error: _IError;
+  error: _IError;
   count: number;
   data: NodeVariableValues;
 }
 
-export class AnedyaGetSnapshotResp
-  implements IAnedyaGetSnapshotResp
-{
+export class AnedyaGetSnapshotResp implements IAnedyaGetSnapshotResp {
   isSuccess: boolean;
   error: _IError;
   count: number;
   data: NodeVariableValues;
   constructor() {
-     this.error = { errorMessage: "", reasonCode: "" };
+    this.error = { errorMessage: "", reasonCode: "" };
     this.isSuccess = false;
     this.count = 0;
-    this.data = []; 
+    this.data = [];
   }
 }

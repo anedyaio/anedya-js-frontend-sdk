@@ -23,7 +23,7 @@ export const getSnapshot = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  getSnapshotReq: IAnedyaGetSnapshotReq
+  getSnapshotReq: IAnedyaGetSnapshotReq,
 ): Promise<any> => {
   const url = `${baseUrl}/data/snapshot`;
 
@@ -36,7 +36,7 @@ export const getSnapshot = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
   try {
     const reqHeaders = {
@@ -57,8 +57,7 @@ export const getSnapshot = async (
     });
     let res: IAnedyaGetSnapshotResp = new AnedyaGetSnapshotResp();
     try {
-      const responseData: _AnedyaGetSnapshotResp =
-        await response.json();
+      const responseData: _AnedyaGetSnapshotResp = await response.json();
       // console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
@@ -70,7 +69,7 @@ export const getSnapshot = async (
       // If only one node was requested → filter array for that node
       if (nodes.length === 1) {
         res.data = responseData.data.filter(
-          (item: NodeVariableValue) => item.node === nodes[0]
+          (item: NodeVariableValue) => item.node === nodes[0],
         );
       } else {
         // If multiple nodes → just return the full array
@@ -89,4 +88,3 @@ export const getSnapshot = async (
     throw error;
   }
 };
-

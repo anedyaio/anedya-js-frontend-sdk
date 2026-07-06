@@ -7,7 +7,6 @@ export const AnedyaError = {
   keyNotFound: 5,
 } as const;
 
-
 // ------------------------------ Error Handling Enums -----------------------------
 
 /**
@@ -15,7 +14,7 @@ export const AnedyaError = {
  * Use these enums instead of hardcoding strings.
  */
 export enum ErrorReason {
-   ACCESS_DENIED = "auth::accessdenied", 
+  ACCESS_DENIED = "auth::accessdenied",
   INVALID_SIGNATURE = "INVALID_SIGNATURE",
   UNAUTHORIZED = "UNAUTHORIZED",
   TOKEN_EXPIRED = "TOKEN_EXPIRED",

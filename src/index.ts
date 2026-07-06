@@ -10,8 +10,8 @@ import { Anedya } from "./anedya";
 import {
   AnedyaGetDataReq,
   AnedyaGetDataResp,
-    AnedyaGetSnapshotReq,
-    AnedyaGetSnapshotResp,
+  AnedyaGetSnapshotReq,
+  AnedyaGetSnapshotResp,
   IAnedyaGetDeviceStatusResp,
   AnedyaGetLatestDataResp,
   AnedyaSetKeyReq,
@@ -29,17 +29,13 @@ import {
   AnedyaDeleteKeyResp,
 } from "./models";
 
-import{
-  AnedyaScope,
-  AnedyaDataType,
-}from "./anedya_constant"
+import { AnedyaScope, AnedyaDataType } from "./anedya_constant";
 
 import { AnedyaError } from "./errors";
 
-import {getAnedyaErrorMessage} from "./utility";
+import { getAnedyaErrorMessage } from "./utility";
 
-
-// Export all the necessary components 
+// Export all the necessary components
 export {
   Anedya,
   AnedyaGetDataReq,
@@ -50,7 +46,6 @@ export {
   AnedyaSetKeyReq,
   AnedyaGetKeyReq,
   AnedyaDeleteKeyReq,
-
   AnedyaScope,
   AnedyaDataType,
   getAnedyaErrorMessage,
@@ -67,5 +62,3 @@ export {
   AnedyaGetKeyResp,
   AnedyaError,
 };
-
-

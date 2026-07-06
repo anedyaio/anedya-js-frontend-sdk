@@ -31,7 +31,7 @@ export const setKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaSetKeyReq
+  reqConfig: AnedyaSetKeyReq,
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
@@ -54,7 +54,7 @@ export const setKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   try {
@@ -116,7 +116,7 @@ export const getKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaGetKeyReq
+  reqConfig: IAnedyaGetKeyReq,
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/getValue`;
   let Id;
@@ -137,7 +137,7 @@ export const getKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   try {
@@ -197,7 +197,7 @@ export const deleteKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaDeleteKeyReq
+  reqConfig: IAnedyaDeleteKeyReq,
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/delete`;
   let Id;
@@ -218,7 +218,7 @@ export const deleteKey = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   try {
@@ -275,7 +275,7 @@ export const scanKeys = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: IAnedyaScanKeysReq
+  reqConfig: IAnedyaScanKeysReq,
 ): Promise<any> => {
   const url = `${baseUrl}/valuestore/scan`;
   let Id;
@@ -301,7 +301,7 @@ export const scanKeys = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   try {
@@ -321,11 +321,9 @@ export const scanKeys = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaScanKeysResp =
-      new AnedyaScanKeysResp();
+    let res: IAnedyaScanKeysResp = new AnedyaScanKeysResp();
     try {
-      const responseData: _AnedyaScanKeysResp =
-        await response.json();
+      const responseData: _AnedyaScanKeysResp = await response.json();
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;

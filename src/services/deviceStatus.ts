@@ -19,7 +19,7 @@ export const getDeviceStatus = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  lastContactThreshold: number
+  lastContactThreshold: number,
 ): Promise<any> => {
   const url = `${baseUrl}/health/status`;
 
@@ -31,7 +31,7 @@ export const getDeviceStatus = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
   try {
     const reqHeaders = {
@@ -52,8 +52,7 @@ export const getDeviceStatus = async (
     });
     let res: IAnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResp();
     try {
-      const responseData: _AnedyaGetDeviceStatusResp =
-        await response.json();
+      const responseData: _AnedyaGetDeviceStatusResp = await response.json();
       // console.log(responseData);
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;

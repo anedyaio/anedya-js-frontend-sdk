@@ -6,7 +6,7 @@
 
 import { NewConfig } from "./config";
 import { NewClient } from "./client";
-import {NewNode} from "./node";
+import { NewNode } from "./node";
 
 interface IAnedya {
   NewConfig(tokenId: string, token: string): NewConfig;
@@ -15,7 +15,6 @@ interface IAnedya {
 }
 
 export class Anedya implements IAnedya {
-
   NewConfig(tokenId: string, token: string): NewConfig {
     return new NewConfig(tokenId, token);
   }
@@ -25,6 +24,6 @@ export class Anedya implements IAnedya {
   }
 
   NewNode(client: NewClient, nodeId: string): NewNode {
-    return new NewNode(client, nodeId);  
+    return new NewNode(client, nodeId);
   }
 }

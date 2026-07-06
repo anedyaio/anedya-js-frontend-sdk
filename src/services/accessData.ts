@@ -57,7 +57,7 @@ export const getData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: IAnedyaGetDataReq
+  accessDataReq: IAnedyaGetDataReq,
 ): Promise<any> => {
   const url = `${baseUrl}/data/getData`;
 
@@ -76,7 +76,7 @@ export const getData = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
 
   try {
@@ -98,8 +98,7 @@ export const getData = async (
       body: JSON.stringify(requestData),
     });
     // Initialize SDK response object
-    let res: IAnedyaGetDataResp =
-      new AnedyaGetDataResp();
+    let res: IAnedyaGetDataResp = new AnedyaGetDataResp();
     try {
       // Parse raw backend response
       let responseData: _AnedyaGetDataResp = await response.json();
@@ -180,7 +179,7 @@ export const fetchLatestData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: any
+  accessDataReq: any,
 ): Promise<any> => {
   const url = `${baseUrl}/data/latest`;
 
@@ -193,7 +192,7 @@ export const fetchLatestData = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
   try {
     const reqHeaders = {
@@ -213,14 +212,13 @@ export const fetchLatestData = async (
     });
     let res: IAnedyaGetLatestDataResp = new AnedyaGetLatestDataResp();
     try {
-      const responseData: _AnedyaGetLatestDataResp =
-        await response.json();
+      const responseData: _AnedyaGetLatestDataResp = await response.json();
       res.isSuccess = responseData.success;
       res.error.errorMessage = responseData.error;
       res.error.reasonCode = responseData.reasonCode;
       res.isDataAvailable = false;
       res.data = null;
-              // Map latest data into SDK response
+      // Map latest data into SDK response
       if (responseData.success) {
         let data: any = responseData.data;
         if (

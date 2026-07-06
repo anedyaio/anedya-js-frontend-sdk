@@ -13,8 +13,7 @@ export interface _ITimeSeriesData {
   [key: string]: object[]; // Adjust `object` to the exact type of elements in the array if possible
 }
 
-
-export interface _IError{
-  errorMessage: string
-  reasonCode: string
+export interface _IError {
+  errorMessage: string;
+  reasonCode: string;
 }
