@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "beta",
+  "initialVersions": {
+    "@anedyasystems/anedya-frontend-sdk": "0.0.3-prerelease.0"
+  },
+  "changesets": [
+    "better-cases-trade",
+    "tough-loops-obey"
+  ]
+}

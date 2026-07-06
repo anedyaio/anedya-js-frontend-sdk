@@ -6,3 +6,6 @@ previous/
 
 dist/
 postman/
+.env
+
+documents/

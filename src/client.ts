@@ -31,7 +31,7 @@ export class NewClient implements IClient {
     const { token, tokenId } = config;
     this.tokenId = tokenId;
     this.signatureVersionBytes = new TextEncoder().encode(
-      this.signatureVersion
+      this.signatureVersion,
     );
     this.tokenBytes = new TextEncoder().encode(token);
     this.baseUrl = config.baseUrl;

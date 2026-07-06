@@ -6,7 +6,11 @@
     "declaration": true,
     "declarationDir": "dist",
     "strict": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "moduleResolution": "node"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
