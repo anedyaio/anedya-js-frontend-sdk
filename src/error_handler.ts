@@ -46,7 +46,11 @@ export async function validateResponse(response: Response): Promise<void> {
 
   // Fallback to status-based error mapping if no specific error body was found or parsed
   if (response.status === 401 || response.status === 403) {
-    throw new AuthenticationError("Unauthorized access", "UNAUTHORIZED", response.status);
+    throw new AuthenticationError(
+      "Unauthorized access",
+      "UNAUTHORIZED",
+      response.status
+    );
   }
   if (response.status === 404) {
     throw new NotFoundError("Resource not found", "NOT_FOUND", response.status);
@@ -57,5 +61,8 @@ export async function validateResponse(response: Response): Promise<void> {
   if (response.status >= 500) {
     throw new ServerError("Server error", "SERVER_ERROR", response.status);
   }
-  throw new NetworkError(`Request failed with status ${response.status}`, response.status);
+  throw new NetworkError(
+    `Request failed with status ${response.status}`,
+    response.status
+  );
 }

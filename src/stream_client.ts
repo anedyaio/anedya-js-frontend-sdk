@@ -43,7 +43,8 @@ export const AnedyaVariableType = {
   STATUS: 3,
 } as const;
 
-export type AnedyaVariableTypeValue = typeof AnedyaVariableType[keyof typeof AnedyaVariableType];
+export type AnedyaVariableTypeValue =
+  (typeof AnedyaVariableType)[keyof typeof AnedyaVariableType];
 
 export interface VariableData {
   nodeId: string | undefined;
@@ -56,7 +57,7 @@ export interface VariableData {
 }
 
 export interface ValueStoreData {
-  nodeId: string | undefined;   // convenience alias — same as namespace.id
+  nodeId: string | undefined; // convenience alias — same as namespace.id
   namespace: {
     scope: string | undefined;
     id: string | undefined;
@@ -77,12 +78,14 @@ type VariableCallback = (data: VariableData) => void;
 type ValueStoreCallback = (data: ValueStoreData) => void;
 type AllMessagesCallback = (data: AllMessagesData) => void;
 type ErrorCallback = (err: Error) => void;
-type StatusCallback = (status: "connected" | "disconnected" | "reconnecting") => void;
+type StatusCallback = (
+  status: "connected" | "disconnected" | "reconnecting"
+) => void;
 
 // ─── Internal subscription records ───────────────────────────────────────────
 
 interface VariableSub {
-  id: string;           // unique sub id for dedup/debug
+  id: string; // unique sub id for dedup/debug
   nodeIds: string[];
   variableIds: string[];
   callback: VariableCallback;
@@ -157,12 +160,7 @@ export class AnedyaStreamClient {
   private errorListeners: ErrorCallback[] = [];
   private statusListeners: StatusCallback[] = [];
 
-
-  constructor(
-    client: NewClient,
-    streamId: string,
-    streamUrl: string,
-  ) {
+  constructor(client: NewClient, streamId: string, streamUrl: string) {
     const {
       tokenId,
       tokenBytes,
@@ -182,14 +180,17 @@ export class AnedyaStreamClient {
     };
   }
 
-
   // ─── Connection ─────────────────────────────────────────────────────────────
 
   async connect(): Promise<void> {
     if (this.isConnected || this.destroyed) return;
 
     const currentTime = Math.floor(Date.now() / 1000);
-    const signature = await anedyaSignature(null, this.configHeaders, currentTime);
+    const signature = await anedyaSignature(
+      null,
+      this.configHeaders,
+      currentTime
+    );
 
     // Browser WebSocket doesn't support custom headers — pass as query params.
     // NewClient already sets authorizationMode = "ANEDYASIGV1" and signatureVersion = "v1"
@@ -199,7 +200,10 @@ export class AnedyaStreamClient {
     url.searchParams.set("x-anedya-tokenid", this.configHeaders.tokenId);
     url.searchParams.set("x-anedya-signature", signature);
     url.searchParams.set("x-anedya-timestamp", currentTime.toString());
-    url.searchParams.set("x-anedya-signatureversion", this.configHeaders.signatureVersion);
+    url.searchParams.set(
+      "x-anedya-signatureversion",
+      this.configHeaders.signatureVersion
+    );
 
     this.ws = new WebSocket(url.toString());
     this.ws.binaryType = "arraybuffer"; // ✅ guarantees ArrayBuffer in browser — no Buffer needed
@@ -218,9 +222,10 @@ export class AnedyaStreamClient {
     };
 
     this.ws.onerror = (event) => {
-      this.errorListeners.forEach((cb) => cb(new Error("WebSocket error occurred")));
+      this.errorListeners.forEach((cb) =>
+        cb(new Error("WebSocket error occurred"))
+      );
     };
-
 
     this.ws.onclose = (event) => {
       //console.log("WS CLOSED", {
@@ -235,10 +240,14 @@ export class AnedyaStreamClient {
   }
 
   /** Pause delivery of ALL callbacks without closing the connection */
-  pause() { this.globalPaused = true; }
+  pause() {
+    this.globalPaused = true;
+  }
 
   /** Resume global delivery */
-  resume() { this.globalPaused = false; }
+  resume() {
+    this.globalPaused = false;
+  }
 
   /** Close the WebSocket permanently — no reconnect will be attempted */
   disconnect() {
@@ -266,7 +275,11 @@ export class AnedyaStreamClient {
    * });
    * ```
    */
-  onVariable(nodeIds: string[], variableIds: string[], callback: VariableCallback): IStreamSubscription {
+  onVariable(
+    nodeIds: string[],
+    variableIds: string[],
+    callback: VariableCallback
+  ): IStreamSubscription {
     const sub: VariableSub = {
       id: this.nextId(),
       nodeIds,
@@ -295,7 +308,11 @@ export class AnedyaStreamClient {
    * });
    * ```
    */
-  onValueStore(nodeIds: string[], keys: string[], callback: ValueStoreCallback): IStreamSubscription {
+  onValueStore(
+    nodeIds: string[],
+    keys: string[],
+    callback: ValueStoreCallback
+  ): IStreamSubscription {
     const sub: ValueStoreSub = {
       id: this.nextId(),
       nodeIds,
@@ -369,7 +386,10 @@ export class AnedyaStreamClient {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
     if (bytes.length === 16) {
-      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+      return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(
+        12,
+        16
+      )}-${hex.slice(16, 20)}-${hex.slice(20)}`;
     }
     return hex;
   }
@@ -387,7 +407,6 @@ export class AnedyaStreamClient {
   }
 
   private handleRawMessage(buffer: Uint8Array) {
-
     if (buffer.length < 4) {
       console.warn("Invalid message: too short");
       return;
@@ -417,15 +436,16 @@ export class AnedyaStreamClient {
       const decoded = decode(payload);
 
       const rawNsId = decoded?.ns?.id;
-      const nsId: string | undefined = rawNsId == null
-        ? undefined
-        : typeof rawNsId === "string"
-          // ns.id arrives as a plain UTF-8 text string (e.g. "019f2839-ed79-…")
-          ? rawNsId
-          // fallback: byte-array encoding (hex-encode each byte)
-          : Array.from(rawNsId as Uint8Array)
-            .map((b) => (b as number).toString(16).padStart(2, "0"))
-            .join("");
+      const nsId: string | undefined =
+        rawNsId == null
+          ? undefined
+          : typeof rawNsId === "string"
+          ? // ns.id arrives as a plain UTF-8 text string (e.g. "019f2839-ed79-…")
+            rawNsId
+          : // fallback: byte-array encoding (hex-encode each byte)
+            Array.from(rawNsId as Uint8Array)
+              .map((b) => (b as number).toString(16).padStart(2, "0"))
+              .join("");
 
       const data: ValueStoreData = {
         nodeId: nsId,
@@ -442,7 +462,13 @@ export class AnedyaStreamClient {
       if (this.globalPaused) return;
 
       this.valueStoreSubs
-        .filter((s) => s.active && !s.paused && this.matches(s.nodeIds, data.namespace.id) && this.matches(s.keys, data.key))
+        .filter(
+          (s) =>
+            s.active &&
+            !s.paused &&
+            this.matches(s.nodeIds, data.namespace.id) &&
+            this.matches(s.keys, data.key)
+        )
         .forEach((s) => s.callback(data));
 
       // Catch-all subscribers also receive value store messages, tagged so
@@ -459,19 +485,28 @@ export class AnedyaStreamClient {
       const decoded = decode(payload);
 
       const rawN = decoded?.n;
-      const nodeId: string | undefined = rawN == null
-        ? undefined
-        : typeof rawN === "string"
-          // n arrives as a plain UTF-8 text string — use directly
-          ? rawN
-          // raw bytes (16-byte UUID) — format with hyphens so it matches
-          // the UUID strings users pass to onVariable(nodeIds, ...)
-          : this.bytesToNodeId(rawN as Uint8Array);
+      const nodeId: string | undefined =
+        rawN == null
+          ? undefined
+          : typeof rawN === "string"
+          ? // n arrives as a plain UTF-8 text string — use directly
+            rawN
+          : // raw bytes (16-byte UUID) — format with hyphens so it matches
+            // the UUID strings users pass to onVariable(nodeIds, ...)
+            this.bytesToNodeId(rawN as Uint8Array);
 
       // Remap geo-coordinate wire keys (lt/ln) to the public API keys (lat/lng).
       let decodedValue = decoded?.d;
-      if (dataType === 2 && decodedValue != null && typeof decodedValue === "object" && "lt" in decodedValue) {
-        decodedValue = { lat: (decodedValue as any).lt, lng: (decodedValue as any).ln };
+      if (
+        dataType === 2 &&
+        decodedValue != null &&
+        typeof decodedValue === "object" &&
+        "lt" in decodedValue
+      ) {
+        decodedValue = {
+          lat: (decodedValue as any).lt,
+          lng: (decodedValue as any).ln,
+        };
       }
 
       const data: VariableData = {
@@ -486,7 +521,13 @@ export class AnedyaStreamClient {
 
       // Per-variable subscribers
       this.variableSubs
-        .filter((s) => s.active && !s.paused && this.matches(s.nodeIds, data.nodeId) && this.matches(s.variableIds, data.variable))
+        .filter(
+          (s) =>
+            s.active &&
+            !s.paused &&
+            this.matches(s.nodeIds, data.nodeId) &&
+            this.matches(s.variableIds, data.variable)
+        )
         .forEach((s) => s.callback(data));
 
       // Catch-all subscribers
@@ -497,7 +538,6 @@ export class AnedyaStreamClient {
       console.error("Variable decode error:", err);
     }
   }
-
 
   // ─── Internal: reconnect ────────────────────────────────────────────────────
 
@@ -525,11 +565,20 @@ export class AnedyaStreamClient {
    * Returns a subscription handle. pause/resume/cancel mutate the sub record
    * directly — no extra lookup needed since we close over the object reference.
    */
-  private makeHandle(sub: { paused: boolean; active: boolean }): IStreamSubscription {
+  private makeHandle(sub: {
+    paused: boolean;
+    active: boolean;
+  }): IStreamSubscription {
     return {
-      pause: () => { sub.paused = true; },
-      resume: () => { sub.paused = false; },
-      cancel: () => { sub.active = false; },
+      pause: () => {
+        sub.paused = true;
+      },
+      resume: () => {
+        sub.paused = false;
+      },
+      cancel: () => {
+        sub.active = false;
+      },
     };
   }
 }

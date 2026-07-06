@@ -80,7 +80,11 @@ export const setKey = async (
     const responseData: _AnedyaSetKeyResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaSetKeyResp();
@@ -159,7 +163,11 @@ export const getKey = async (
     const responseData: _AnedyaGetKeyResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaGetKeyResp();
@@ -235,7 +243,11 @@ export const deleteKey = async (
     const responseData: _AnedyaDeleteKeyResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaDeleteKeyResp();
@@ -313,7 +325,11 @@ export const scanKeys = async (
     const responseData: _AnedyaScanKeysResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaScanKeysResp();

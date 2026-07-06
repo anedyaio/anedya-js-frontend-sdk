@@ -102,7 +102,11 @@ export const getData = async (
     const responseData: _AnedyaGetDataResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaGetDataResp();
@@ -110,10 +114,10 @@ export const getData = async (
     res.isDataAvailable = false;
     res.data = null;
 
-    let data: _ITimeSeriesData | null = responseData.data;
+    let data: any = responseData.data;
     if (data && Object.keys(data).length > 0) {
       if (nodes.length === 1) {
-        data = data[nodes.toString()] as _ITimeSeriesData;
+        data = data[nodes.toString()];
       }
       res.data = data;
       res.isDataAvailable = true;
@@ -201,7 +205,11 @@ export const fetchLatestData = async (
     const responseData: _AnedyaGetLatestDataResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaGetLatestDataResp();
@@ -209,10 +217,10 @@ export const fetchLatestData = async (
     res.isDataAvailable = false;
     res.data = null;
 
-    let data: _ITimeSeriesData | null = responseData.data;
+    let data: any = responseData.data;
     if (data && Object.keys(data).length > 0) {
       if (nodes.length === 1) {
-        data = data[nodes.toString()] as _ITimeSeriesData;
+        data = data[nodes.toString()];
       }
       res.data = data;
       res.isDataAvailable = true;

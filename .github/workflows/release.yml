@@ -1,0 +1,173 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Release Workflow
+#
+# PURPOSE:
+#   Automatically build and publish a stable release of the SDK every time
+#   code is merged into the `main` branch (typically from `prerelease`).
+#
+# TRIGGER:
+#   - Push to `main` branch only
+#
+# CHANGESETS EXIT PRERELEASE MODE EXPLAINED:
+#   When `prerelease` is merged into `main`, the `.changeset/pre.json` file
+#   arrives with the merge. Changesets must `pre exit` to:
+#     1. Remove the prerelease suffix from version numbers
+#     2. Consolidate all beta changesets into a single stable release entry
+#     3. Delete `pre.json` so the next release cycle starts clean
+#
+#   After `pre exit`, `changeset version` produces a clean stable version
+#   like `1.2.0` instead of `1.2.0-beta.3`.
+#
+# GITHUB RELEASE:
+#   We use `gh release create` to create a GitHub Release. Changesets itself
+#   can also create GitHub Releases via its action, but we do it manually here
+#   for full control over the release notes format and to avoid depending on
+#   the Changesets GitHub Action (which has its own git push behavior that
+#   conflicts with our manual commit flow).
+#
+# TAG STRATEGY:
+#   `changeset publish` creates git tags automatically (e.g., @anedyasystems/anedya-frontend-sdk@1.2.0).
+#   We also create a plain `v1.2.0` tag for GitHub Releases and human readability.
+#   Both are pushed with --follow-tags.
+#
+# DOUBLE-PUBLISH GUARD:
+#   If `main` receives a push that does NOT change package.json (e.g., a docs
+#   update), the workflow exits cleanly with a notice. No publish occurs.
+# ─────────────────────────────────────────────────────────────────────────────
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false  # Never cancel an in-progress publish run
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release · Version · Publish (latest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required by Changesets
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Configure Git Identity
+        run: |
+          git config --global user.name  "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # If the merge from `prerelease` brought along `.changeset/pre.json`,
+      # we must exit prerelease mode before versioning so the final version
+      # is stable (e.g., 1.2.0, not 1.2.0-beta.3).
+      #
+      # `git rm` is used instead of `rm` so the deletion is staged for the
+      # subsequent git commit without needing an extra `git add`.
+      - name: Exit Prerelease Mode (if active)
+        run: |
+          if [ -f .changeset/pre.json ]; then
+            echo "::notice::Exiting Changesets prerelease mode"
+            npx changeset pre exit
+            # pre.json is removed by the above command; stage the deletion
+            git add .changeset/pre.json || true
+          else
+            echo "::notice::Not in prerelease mode — skipping pre exit"
+          fi
+
+      # Applies pending changeset files to produce the final stable version
+      # and update CHANGELOG.md.
+      - name: Version Packages
+        run: npx changeset version
+
+      - name: Check for Version Changes
+        id: version_check
+        run: |
+          if git diff --quiet package.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::No changesets found — nothing to publish"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            echo "changed=true"   >> "$GITHUB_OUTPUT"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            echo "::notice::Releasing version $VERSION"
+          fi
+
+      - name: Build SDK
+        if: steps.version_check.outputs.changed == 'true'
+        run: npm run build
+
+      # Tests are disabled until test coverage lands. Re-enable when ready:
+      # - name: Run Tests
+      #   if: steps.version_check.outputs.changed == 'true'
+      #   run: npm test
+
+      # Publishes to npm under the `latest` dist-tag (default).
+      # `changeset publish` also creates scoped package tags in git
+      # (e.g., @anedyasystems/anedya-frontend-sdk@1.2.0).
+      - name: Publish Stable Release to npm (latest)
+        if: steps.version_check.outputs.changed == 'true'
+        run: npx changeset publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Create a plain `v1.2.0` annotated tag for GitHub Releases and human
+      # readability, in addition to the scoped package tag created by changeset publish.
+      - name: Create Version Tag
+        if: steps.version_check.outputs.changed == 'true'
+        run: |
+          git tag -a "v${{ steps.version_check.outputs.version }}" \
+                  -m "Release v${{ steps.version_check.outputs.version }}"
+
+      # Commit the version bump + CHANGELOG.md changes and push all tags.
+      # `--follow-tags` pushes both annotated and lightweight tags.
+      - name: Commit and Push Release
+        if: steps.version_check.outputs.changed == 'true'
+        run: |
+          git add -A
+          git commit -m "chore(release): v${{ steps.version_check.outputs.version }} [skip ci]"
+          git push origin main --follow-tags
+
+      # Extract the CHANGELOG section for the new version to use as GitHub
+      # Release body. The `awk` block prints content between the first and
+      # second `## ` headings (i.e., the latest changelog entry).
+      - name: Extract Changelog for Release Notes
+        if: steps.version_check.outputs.changed == 'true'
+        id: extract_changelog
+        run: |
+          NOTES=$(awk '/^## /{if(found) exit; found=1; next} found{print}' CHANGELOG.md)
+          # GitHub output supports multiline via EOF delimiter
+          {
+            echo "notes<<EOF"
+            echo "$NOTES"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # Creates an official GitHub Release attached to the `v1.2.0` tag.
+      # Uses the CHANGELOG section as the release body for rich release notes.
+      - name: Create GitHub Release
+        if: steps.version_check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ steps.version_check.outputs.version }}" \
+            --title "v${{ steps.version_check.outputs.version }}" \
+            --notes "${{ steps.extract_changelog.outputs.notes }}" \
+            --target main

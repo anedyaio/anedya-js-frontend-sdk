@@ -62,7 +62,11 @@ export const getSnapshot = async (
     const responseData: _AnedyaGetSnapshotResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaGetSnapshotResp();

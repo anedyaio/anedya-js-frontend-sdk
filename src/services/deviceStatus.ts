@@ -56,7 +56,11 @@ export const getDeviceStatus = async (
     const responseData: _AnedyaGetDeviceStatusResp = await response.json();
 
     if (!responseData.success) {
-      throw new AnedyaError(responseData.error, responseData.reasonCode, response.status);
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status
+      );
     }
 
     const res = new AnedyaGetDeviceStatusResp();

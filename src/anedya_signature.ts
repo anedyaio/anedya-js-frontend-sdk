@@ -10,7 +10,7 @@ export const anedyaSignature = async (
 
     if (requestData === null || requestData === undefined) {
       // ✅ WebSocket case → empty body
-      bodyBytes = new Uint8Array(); 
+      bodyBytes = new Uint8Array();
     } else {
       // ✅ REST case → normal payload
       const encoder = new TextEncoder();
@@ -18,10 +18,10 @@ export const anedyaSignature = async (
     }
 
     // SHA-256 of body
-const bodyHashBuffer = await crypto.subtle.digest(
-  "SHA-256",
-  bodyBytes as BufferSource
-);
+    const bodyHashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      bodyBytes as BufferSource
+    );
     const bodyHashBytes = new Uint8Array(bodyHashBuffer);
 
     // Timestamp (same as before)
@@ -31,9 +31,9 @@ const bodyHashBuffer = await crypto.subtle.digest(
     // Combine bytes (same as before)
     const combinedBytes = new Uint8Array(
       bodyHashBytes.length +
-      timeBytes.length +
-      configHeaders.signatureVersionBytes.length +
-      configHeaders.tokenBytes.length
+        timeBytes.length +
+        configHeaders.signatureVersionBytes.length +
+        configHeaders.tokenBytes.length
     );
 
     combinedBytes.set(bodyHashBytes, 0);
@@ -45,8 +45,8 @@ const bodyHashBuffer = await crypto.subtle.digest(
     combinedBytes.set(
       configHeaders.tokenBytes,
       bodyHashBytes.length +
-      timeBytes.length +
-      configHeaders.signatureVersionBytes.length
+        timeBytes.length +
+        configHeaders.signatureVersionBytes.length
     );
 
     // Final hash
@@ -58,8 +58,7 @@ const bodyHashBuffer = await crypto.subtle.digest(
     return Array.from(new Uint8Array(combinedHashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
-
   } catch (e) {
-    //console.log(e);
+    throw e;
   }
 };
