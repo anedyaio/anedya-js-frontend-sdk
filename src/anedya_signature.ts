@@ -29,12 +29,14 @@ export const anedyaSignature = async (
     new DataView(timeBytes.buffer).setBigUint64(0, BigInt(currentTime), false);
 
     // Combine bytes (same as before)
+
     const combinedBytes = new Uint8Array(
       bodyHashBytes.length +
         timeBytes.length +
         configHeaders.signatureVersionBytes.length +
         configHeaders.tokenBytes.length,
     );
+
 
     combinedBytes.set(bodyHashBytes, 0);
     combinedBytes.set(timeBytes, bodyHashBytes.length);
@@ -50,6 +52,7 @@ export const anedyaSignature = async (
     );
 
     // Final hash
+
     const combinedHashBuffer = await crypto.subtle.digest(
       "SHA-256",
       combinedBytes,

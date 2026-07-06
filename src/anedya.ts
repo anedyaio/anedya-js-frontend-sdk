@@ -21,7 +21,9 @@ interface IAnedya {
 }
 
 export class Anedya implements IAnedya {
+
   newConfig(tokenId: string, token: string): NewConfig {
+
     return new NewConfig(tokenId, token);
   }
 
@@ -39,5 +41,6 @@ export class Anedya implements IAnedya {
     streamUrl: string,
   ): AnedyaStreamClient {
     return new AnedyaStreamClient(client, streamId, streamUrl);
+
   }
 }
