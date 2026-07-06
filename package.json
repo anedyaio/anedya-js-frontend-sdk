@@ -9,9 +9,11 @@
   "version": "0.1.0-beta.1",
   "author": "Anedya Systems",
   "license": "Apache-2.0",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "main": "dist/anedya.js",
+  "module": "dist/anedya.mjs",
+  "types": "dist/anedya.d.ts",
+  "unpkg": "dist/anedya.min.js",
+  "jsdelivr": "dist/anedya.min.js",
   "files": [
     "dist"
   ],
@@ -19,13 +21,16 @@
     "access": "public"
   },
   "exports": {
-    "import": "./dist/index.mjs",
-    "types": "./dist/index.d.ts",
-    "require": "./dist/index.js"
+    ".": {
+      "types": "./dist/anedya.d.ts",
+      "import": "./dist/anedya.mjs",
+      "require": "./dist/anedya.js",
+      "default": "./dist/anedya.min.js"
+    }
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "dev": "tsup --watch",
     "test": "node tests/test.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "prettier --check \"src/**/*.ts\"",

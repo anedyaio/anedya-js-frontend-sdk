@@ -6,10 +6,10 @@ const {
   AnedyaVariableType,
 } = require("@anedyasystems/anedya-frontend-sdk");
 
-const streamId = "019f31ed-1ca3-71c9-ac15-84fa01fc905d"
+const tokenId = ""
+const token = ""
+const streamId = ""
 const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
-const tokenId = "qUM1uFhwYXB5GF2JMdzVBG6m"
-const token = "jL5vBAWk3c4vmgGPUBqzsFKTGk3TSxesF1SSLexCj3ju2A3BIFd6aUjNmPRS8O9w"
 const nodeId = ["019f283a-6d5b-7a7e-a445-e6bf024cc051", "019f2839-ed79-7eef-a12c-465c2ce431bb"]
 const variables = ["temperature", "status", "location"]
 const vsKey = ["vs-test", "test"]
