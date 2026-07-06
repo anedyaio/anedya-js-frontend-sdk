@@ -1,5 +1,11 @@
 # @anedyasystems/anedya-frontend-sdk
 
+## 0.1.0-beta.3
+
+### Patch Changes
+
+- 7d5f920: improvements: sdk integration
+
 ## 0.1.0-beta.2
 
 ### Patch Changes

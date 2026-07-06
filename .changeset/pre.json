@@ -6,6 +6,7 @@
   },
   "changesets": [
     "better-cases-trade",
+    "seven-turtles-shout",
     "tough-loops-obey"
   ]
 }
