@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anedya Frontend SDK - CDN Live Demo</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@exampledev/new.css@1.1.2/new.min.css">
+
+  <!-- <script src="../dist/anedya.min.js"></script> -->
+  <script src="https://cdn.jsdelivr.net/npm/@anedyasystems/anedya-frontend-sdk"></script>
+</head>
+
+<body>
+
+  <header>
+    <h1>Anedya Frontend SDK Demo</h1>
+    <p>Testing SDK operations and live WebSockets directly via CDN</p>
+  </header>
+
+  <main>
+    <section>
+      <h3>Actions Console</h3>
+      <button onclick="runNodeOperations()">Execute Node Operations</button>
+      <button onclick="startStream()" class="primary">Connect Live Stream</button>
+    </section>
+
+    <section>
+      <h3>Live Application Logs</h3>
+      <pre><code id="log-output">Click a button above to start tracing SDK actions...</code></pre>
+    </section>
+  </main>
+
+  <script>
+    // 1. Destructure using window.Anedya to prevent naming collision errors
+    const {
+      AnedyaError,
+      AnedyaScope,
+      AnedyaDataType,
+      AnedyaVariableType
+    } = window.Anedya;
+
+    // --- Configuration Variables ---
+    const streamId = "019f3794-137b-7980-9bf8-117577267956";
+    const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect";
+    const tokenId = "eYaBZLW8DsXAGtLOqMRMZFTq";
+    const token = "p5V98rJK0NCDEEW0He7ox0ef2wjmCtZdPwhOc1vY9Hm0luNB9WLycZYGcSJjEUB2";
+    const nodeIds = ["019f283a-6d5b-7a7e-a445-e6bf024cc051", "019f2839-ed79-7eef-a12c-465c2ce431bb"];
+    const variables = ["temperature", "status", "location"];
+    const vsKeys = ["vs-test", "test"];
+
+    // --- Initialize Anedya SDK Client ---
+    // Accessing the main class explicitly via window namespace
+    const anedya = new window.Anedya.Anedya();
+    const connectConfig = anedya.newConfig(tokenId, token);
+    const client = anedya.newClient(connectConfig);
+    const node1 = anedya.newNode(client, nodeIds[0]);
+    const stream = anedya.newStream(client, streamId, streamUrl);
+
+    // Logging helper to output in the web browser view
+    const logEl = document.getElementById("log-output");
+    function log(message, obj = "") {
+      const logStr = typeof obj === "object" ? JSON.stringify(obj, null, 2) : obj;
+      logEl.innerHTML += `\n[${new Date().toLocaleTimeString()}] ${message} ${logStr}`;
+      console.log(message, obj);
+    }
+
+    // --- Node API Operations (HTTP Requests) ---
+    async function runNodeOperations() {
+      logEl.innerHTML = "--- Running Node Operations ---";
+
+      // Get Node ID
+      try {
+        log(`Node ID: ${node1.getNodeId()}`);
+      } catch (err) { log("Error getting Node ID", err); }
+
+      // Fetch Historical Data (24h Window)
+      try {
+        const currentTime = Date.now();
+        const pastTime = currentTime - (86400 * 1000);
+        const res = await node1.getData({
+          variable: variables[0],
+          from: pastTime,
+          to: currentTime,
+          limit: 5
+        });
+        log("Get Historical Data Result:", res.isDataAvailable ? res.data : "No data available.");
+      } catch (err) { handleSdkExtensionError("getData", err); }
+
+      // Fetch Latest Single Variable Frame
+      try {
+        const res = await node1.getLatestData(variables[0]);
+        log("Get Latest Data Result:", res.isDataAvailable ? res.data : "No latest data.");
+      } catch (err) { handleSdkExtensionError("getLatestData", err); }
+
+      // Set Key Value Store (Value Store Set)
+      try {
+        await node1.setKey({
+          namespace: { scope: AnedyaScope.NODE },
+          key: "temperature",
+          value: 30.5,
+          type: AnedyaDataType.FLOAT
+        });
+        log("Key 'temperature' updated to 30.5 successfully.");
+      } catch (err) { handleSdkExtensionError("setKey", err); }
+
+      // Read Key From Value Store
+      try {
+        const res = await node1.getKey({
+          namespace: { scope: AnedyaScope.NODE },
+          key: "temperature"
+        });
+        log(`Key fetched successfully. Value: ${res.value}`);
+      } catch (err) { handleSdkExtensionError("getKey", err); }
+
+      // Value Store Search / Scan Keys
+      try {
+        const res = await node1.scanKeys({
+          filter: { namespace: { scope: AnedyaScope.NODE } },
+          orderby: "namespace",
+          order: "asc",
+          limit: 5,
+          offset: 0
+        });
+        log("Scan Keys Collection:", res.data);
+      } catch (err) { handleSdkExtensionError("scanKeys", err); }
+
+      // Delete Key from Value Store
+      try {
+        await node1.deleteKey({
+          namespace: { scope: AnedyaScope.NODE },
+          key: "temperature"
+        });
+        log("Key 'temperature' deleted successfully.");
+      } catch (err) { handleSdkExtensionError("deleteKey", err); }
+
+      // Device Status Fetch
+      try {
+        const res = await node1.getDeviceStatus(10);
+        log("Device Online/Offline Status:", res);
+      } catch (err) { handleSdkExtensionError("getDeviceStatus", err); }
+    }
+
+    // --- WebSocket Stream Lifecycle & Subscriptions ---
+    async function startStream() {
+      log("\n--- Initializing WebSocket Stream Subscriptions ---");
+
+      // Connection state listeners
+      stream.onStatus((status) => log(`🔌 Connection Status Changed: ${status}`));
+      stream.onError((err) => log("❌ WebSocket Protocol Error:", err));
+
+      // Variable topic handlers
+      stream.onVariable(nodeIds, variables, (data) => {
+        switch (data.dataType) {
+          case AnedyaVariableType.FLOAT:
+            log(`📡 [FLOAT] ${data.variable} = ${data.value} (Node: ${data.nodeId})`);
+            break;
+          case AnedyaVariableType.GEO_COORDINATE:
+            log(`📡 [GEO] ${data.variable} = Lat: ${data.value.lat}, Lng: ${data.value.lng}`);
+            break;
+          case AnedyaVariableType.STATUS:
+            log(`📡 [STATUS] ${data.variable} = "${data.value}"`);
+            break;
+          default:
+            log(`📡 [TYPE: ${data.dataType}] ${data.variable}:`, data.value);
+        }
+      });
+
+      // Value store storage monitoring subscription
+      const thresholdSub = stream.onValueStore(nodeIds, vsKeys, (data) => {
+        log(`💾 ValueStore Change Intercepted! Key: ${data.key} -> Value: ${data.value}`);
+        thresholdSub.cancel();
+      });
+
+      // Omnipresent frame parser catching all dynamic metrics
+      stream.onAllMessages((data) => {
+        if (data.kind === "variable") {
+          log(`🔮 Global Stream Feed -> Variable Event: ${data.variable}`);
+        } else {
+          log(`🔮 Global Stream Feed -> Key/Value Mutation: ${data.key}`);
+        }
+      });
+
+      // Fire browser connection
+      try {
+        await stream.connect();
+        log("🚀 Connection requested successfully.");
+      } catch (err) {
+        log("Connection process failed:", err);
+      }
+    }
+
+    // Centralized SDK parsing handler
+    function handleSdkExtensionError(method, error) {
+      if (error instanceof AnedyaError) {
+        log(`❌ Error in ${method} -> ${error.message} (Reason Code: ${error.reasonCode})`);
+      } else {
+        log(`❌ Error in ${method}:`, error);
+      }
+    }
+  </script>
+</body>
+
+</html>
