@@ -37,7 +37,6 @@ export const anedyaSignature = async (
         configHeaders.tokenBytes.length,
     );
 
-
     combinedBytes.set(bodyHashBytes, 0);
     combinedBytes.set(timeBytes, bodyHashBytes.length);
     combinedBytes.set(
