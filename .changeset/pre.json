@@ -4,5 +4,7 @@
   "initialVersions": {
     "@anedyasystems/anedya-frontend-sdk": "0.0.3-prerelease.0"
   },
-  "changesets": []
+  "changesets": [
+    "tough-loops-obey"
+  ]
 }
