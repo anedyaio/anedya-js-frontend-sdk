@@ -1,4 +1,3 @@
-import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
 import {
@@ -8,6 +7,8 @@ import {
   NodeVariableValue,
   NodeVariableValues,
 } from "../models";
+import { validateResponse } from "../error_handler";
+import { AnedyaError } from "../errors";
 
 // ------------------------ Device Status -------------------------
 interface _AnedyaGetSnapshotResp {
@@ -23,8 +24,8 @@ export const getSnapshot = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  getSnapshotReq: IAnedyaGetSnapshotReq
-): Promise<any> => {
+  getSnapshotReq: IAnedyaGetSnapshotReq,
+): Promise<AnedyaGetSnapshotResp> => {
   const url = `${baseUrl}/data/snapshot`;
 
   const requestData = {
@@ -36,9 +37,10 @@ export const getSnapshot = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
-  try {
+
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -47,7 +49,6 @@ export const getSnapshot = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -55,38 +56,34 @@ export const getSnapshot = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaGetSnapshotResp = new AnedyaGetSnapshotResp();
-    try {
-      const responseData: _AnedyaGetSnapshotResp =
-        await response.json();
-      // console.log(responseData);
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      if (!res.isSuccess) {
-        return res;
-      }
 
-      // If only one node was requested → filter array for that node
-      if (nodes.length === 1) {
-        res.data = responseData.data.filter(
-          (item: NodeVariableValue) => item.node === nodes[0]
-        );
-      } else {
-        // If multiple nodes → just return the full array
-        res.data = responseData.data;
-      }
-      res.count = responseData.count; // keep count in sync
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetSnapshotResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during fetch operation:", error);
-    throw error;
-  }
-};
 
+    const res = new AnedyaGetSnapshotResp();
+    res.isSuccess = true;
+
+    // If only one node was requested → filter array for that node
+    if (nodes.length === 1) {
+      res.data = responseData.data.filter(
+        (item: NodeVariableValue) => item.node === nodes[0],
+      );
+    } else {
+      // If multiple nodes → just return the full array
+      res.data = responseData.data;
+    }
+    res.count = responseData.count; // keep count in sync
+    return res;
+  };
+
+  return executeRequest();
+};

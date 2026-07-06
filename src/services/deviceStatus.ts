@@ -1,10 +1,11 @@
-import { Anedya } from "../anedya";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
 import {
   IAnedyaGetDeviceStatusResp,
   AnedyaGetDeviceStatusResp,
 } from "../models";
+import { validateResponse } from "../error_handler";
+import { AnedyaError } from "../errors";
 
 // ------------------------ Device Status -------------------------
 interface _AnedyaGetDeviceStatusResp {
@@ -12,17 +13,16 @@ interface _AnedyaGetDeviceStatusResp {
   errcode: number;
   error: string;
   reasonCode: string;
-  data: any;
+  data: Record<string, { online: boolean; lastHeartbeat: number }>;
 }
 
 export const getDeviceStatus = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  lastContactThreshold: number
-): Promise<any> => {
+  lastContactThreshold: number,
+): Promise<AnedyaGetDeviceStatusResp> => {
   const url = `${baseUrl}/health/status`;
-
   const requestData = {
     nodes: nodes,
     lastContactThreshold: lastContactThreshold,
@@ -31,9 +31,10 @@ export const getDeviceStatus = async (
   const combinedHash = await anedyaSignature(
     requestData,
     configHeaders,
-    currentTime
+    currentTime,
   );
-  try {
+
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -42,7 +43,6 @@ export const getDeviceStatus = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -50,31 +50,28 @@ export const getDeviceStatus = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaGetDeviceStatusResp = new AnedyaGetDeviceStatusResp();
-    try {
-      const responseData: _AnedyaGetDeviceStatusResp =
-        await response.json();
-      // console.log(responseData);
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      if (!res.isSuccess) {
-        return res;
-      }
-      if (nodes.length === 1) {
-        res.data = responseData.data[nodes[0]];
-      } else {
-        res.data = responseData.data;
-      }
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetDeviceStatusResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during fetch operation:", error);
-    throw error;
-  }
+
+    const res = new AnedyaGetDeviceStatusResp();
+    res.isSuccess = true;
+    if (nodes.length === 1) {
+      res.data = responseData.data[nodes[0]];
+    } else {
+      res.data = responseData.data;
+    }
+    return res;
+  };
+
+  return executeRequest();
 };

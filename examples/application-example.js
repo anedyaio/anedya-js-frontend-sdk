@@ -1,39 +1,31 @@
 const {
   Anedya,
-  AnedyaGetDataReq,
-  AnedyaGetDataResp,
-  AnedyaGetSnapshotReq,
-  AnedyaGetSnapshotResp,
-  AnedyaGetLatestDataResp,
-  AnedyaSetKeyReq,
-  AnedyaGetKeyReq,
+  AnedyaError,
   AnedyaScope,
   AnedyaDataType,
-  AnedyaScanKeysResp,
-  AnedyaScanKeysReq,
-  AnedyaSetKeyResp,
-  AnedyaGetKeyResp,
-  AnedyaDeleteKeyResp,
-  AnedyaGetDeviceStatusResp,
-} = require("@anedyaio/anedya-js-frontend-sdk");
+  AnedyaVariableType,
+} = require("@anedyasystems/anedya-frontend-sdk");
 
-// Configuration Constants
-const tokenId = "";
-const token = "";
-const NodeId = "";
-const variableIdentifier = "";
+const streamId = "019f31ed-1ca3-71c9-ac15-84fa01fc905d"
+const streamUrl = "wss://ZxBpErVPCj.acs-r1.ap-in-1.anedya.io/v1/streams/connect"
+const tokenId = "qUM1uFhwYXB5GF2JMdzVBG6m"
+const token = "jL5vBAWk3c4vmgGPUBqzsFKTGk3TSxesF1SSLexCj3ju2A3BIFd6aUjNmPRS8O9w"
+const nodeId = ["019f283a-6d5b-7a7e-a445-e6bf024cc051", "019f2839-ed79-7eef-a12c-465c2ce431bb"]
+const variables = ["temperature", "status", "location"]
+const vsKey = ["vs-test", "test"]
 
 // Initialize Anedya Client
 const anedya = new Anedya();
-const connect_config = anedya.NewConfig(tokenId, token);
-const client = anedya.NewClient(connect_config);
-const node_1 = anedya.NewNode(client, NodeId);
+const connect_config = anedya.newConfig(tokenId, token);
+const client = anedya.newClient(connect_config);
+const node_1 = anedya.newNode(client, nodeId[0]);
+const stream = anedya.newStream(client, streamId, streamUrl);
 
 // Example function to get Node ID
 async function getNodeId() {
   try {
-    const nodeId = node_1.getNodeId();
-    console.log("Node Id:", nodeId);
+    const id = node_1.getNodeId();
+    console.log("Node Id:", id);
   } catch (error) {
     console.error("Error getting Node Id:", error);
   }
@@ -42,151 +34,181 @@ async function getNodeId() {
 // Example function to access data from the Anedya platform
 async function getData() {
   try {
-    const currentTime = Math.floor(Date.now()); //time in milliseconds
+    const currentTime = Date.now(); // time in milliseconds
     const twentyFourHoursDelayedTime = currentTime - 86400 * 1000;
-    const req = new AnedyaGetDataReq(
-      variableIdentifier,
-      twentyFourHoursDelayedTime,
-      currentTime,
-      10
-    );
-    let res = new AnedyaGetDataResp();
-    res = await node_1.getData(req);
-    if (res.isSuccess) {
-      if (res.isDataAvailable) {
-        console.log("Data:", res.data);
-      } else {
-        console.log("No data available in Requested timestamp!!");
-      }
+    const res = await node_1.getData({
+      variable: variables[0],
+      from: twentyFourHoursDelayedTime,
+      to: currentTime,
+      limit: 10
+    });
+
+    if (res.isDataAvailable) {
+      console.log("Data:", res.data);
     } else {
-      console.error("Error fetching data:", res.error.errorMessage);
+      console.log("No data available in Requested timestamp!!");
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching data:", error);
+    }
   }
 }
 
 // Example function to get the latest data
 async function getLatestData() {
   try {
-    let res = new AnedyaGetLatestDataResp();
-    res = await node_1.getLatestData(variableIdentifier);
-    if (res.isSuccess) {
-      if (res.isDataAvailable) {
-        console.log("Latest Data:", res.data);
-      } else {
-        console.log("No latest data available!");
-      }
+    const res = await node_1.getLatestData(variables[0]);
+    if (res.isDataAvailable) {
+      console.log("Latest Data:", res.data);
     } else {
-      console.error("Error fetching latest data:", res.error);
+      console.log("No latest data available!");
     }
   } catch (error) {
-    console.error("Error fetching latest data:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching latest data:", error);
+    }
   }
 }
 
 async function setKey() {
   try {
-    let req = new AnedyaSetKeyReq(
-      { scope: AnedyaScope.NODE },
-      "temperature",
-      30,
-      AnedyaDataType.FLOAT
-    );
-    let res = new AnedyaSetKeyResp();
-    res = await node_1.setKey(req);
-
-    if (res.isSuccess) {
-      console.log("Key set successfully!");
-    } else {
-      console.error("Error setting key:", res);
-    }
+    await node_1.setKey({
+      namespace: { scope: AnedyaScope.NODE },
+      key: "temperature",
+      value: 30,
+      type: AnedyaDataType.FLOAT
+    });
+    console.log("Key set successfully!");
   } catch (error) {
-    console.error("Error setting key 2:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error setting key:", error);
+    }
   }
 }
 
 async function getKey() {
   try {
-    let req = new AnedyaGetKeyReq({ scope: "node" }, "temperature");
-    let res = new AnedyaGetKeyResp();
-    res = await node_1.getKey(req);
-
-    if (res.isSuccess) {
-      console.log("Key fetched successfully!");
-    } else {
-      console.error("Error fetching key:", res);
-    }
+    const res = await node_1.getKey({
+      namespace: { scope: AnedyaScope.NODE },
+      key: "temperature"
+    });
+    console.log("Key fetched successfully!", res.value);
   } catch (error) {
-    console.error("Error fetching key 2:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error fetching key:", error);
+    }
   }
 }
 
 async function deleteKey() {
   try {
-    let req = new AnedyaGetKeyReq({ scope: "node" }, "temperature");
-    let res = new AnedyaDeleteKeyResp();
-    res = await node_1.deleteKey(req);
-
-    if (res.isSuccess) {
-      console.log("Key deleted successfully!");
-    } else {
-      console.error("Error deleting key: ", res.error.errorMessage);
-    }
+    await node_1.deleteKey({
+      namespace: { scope: AnedyaScope.NODE },
+      key: "temperature"
+    });
+    console.log("Key deleted successfully!");
   } catch (error) {
-    console.error("Error deleting key 2:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error deleting key:", error);
+    }
   }
 }
 
 async function scanKeys() {
   try {
-    let req = new AnedyaScanKeysReq(
-      { namespace: { scope: AnedyaScope.NODE } },
-      "namespace",
-      "asc",
-      10,
-      0
-    );
-    let res = new AnedyaScanKeysResp();
-    res = await node_1.scanKeys(req);
-
-    if (res.isSuccess) {
-      console.log("Keys scanned successfully!");
-    } else {
-      console.error("Error scanning Keys:", res);
-    }
+    const res = await node_1.scanKeys({
+      filter: { namespace: { scope: AnedyaScope.NODE } },
+      orderby: "namespace",
+      order: "asc",
+      limit: 10,
+      offset: 0
+    });
+    console.log("Keys scanned successfully!", res.data);
   } catch (error) {
-    console.error("Error scanning Keys 2:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error scanning Keys:", error);
+    }
   }
 }
 
 // Function to get device status
 async function getDeviceStatus() {
   try {
-    let res = new AnedyaGetDeviceStatusResp();
-    res = await node_1.getDeviceStatus(10);
+    const res = await node_1.getDeviceStatus(10);
     console.log("Device Status:", res);
   } catch (error) {
-    console.error("Error getting Device Status:", error);
+    if (error instanceof AnedyaError) {
+      console.error(`Anedya Error: ${error.message} (Code: ${error.reasonCode})`);
+    } else {
+      console.error("Error getting Device Status:", error);
+    }
   }
 }
 
-// Function to get snapshot
-async function getSnapshot() {
-  try {
-    const currentTime = Math.floor(Date.now() / 1000); //time in seconds
-    let req = new AnedyaGetSnapshotReq(currentTime, variableIdentifier);
+async function getStream() {
+  // stream is created at the top of the file
 
-    // Initialize Resp object
-    let res = new AnedyaGetSnapshotResp();
+  stream.onStatus((status) => console.log("🔌 Status:", status));
+  stream.onError((err) => console.error("Error:", err));
 
-    // Make the Req
-    res = await node_1.getSnapshot(req);
+  const tempSub = stream.onVariable(nodeId, variables, (data) => {
+    switch (data.dataType) {
+      case AnedyaVariableType.FLOAT:
+        console.log(`[FLOAT]  ${data.variable} = ${data.value}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
 
-    console.log("Snapshot:", res);
-  } catch (error) {
-    console.error("Error getting Snapshot:", error);
-  }
+      case AnedyaVariableType.GEO_COORDINATE: {
+        const geo = data.value; // { lat, lng }
+        console.log(`[GEO]    ${data.variable} → lat: ${geo.lat}, lng: ${geo.lng}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
+      }
+
+      case AnedyaVariableType.STATUS:
+        console.log(`[STATUS] ${data.variable} = "${data.value}"  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+        break;
+
+      default:
+        console.log(`[TYPE:${data.dataType}] ${data.variable} = ${JSON.stringify(data.value)}  (node: ${data.nodeId}, ts: ${data.timestamp})`);
+    }
+  });
+
+  const thresholdSub = stream.onValueStore(nodeId, vsKey, (data) => {
+    console.log("ValueStore changed Key: ", data.key, "Value:", data.value);
+    console.log("  nodeId         :", data.nodeId);
+    console.log("  namespace.scope:", data.namespace.scope);
+    console.log("  namespace.id   :", data.namespace.id);
+    thresholdSub.cancel();
+  });
+
+
+  // Fires for EVERY incoming message — both variable and value store frames.
+  // data.kind tells you which shape you got: "variable" or "valuestore".
+  const allSub = stream.onAllMessages((data) => {
+    if (data.kind === "variable") {
+      console.log("📡 All messages → variable:", data.variable, data.value);
+    } else {
+      console.log("📡 All messages → valuestore:", data.key, data.value);
+    }
+  });
+
+  await stream.connect();
+
+  // setTimeout(() => { stream.pause(); console.log("⏸️ Global pause"); }, 30_000);
+  // setTimeout(() => { stream.resume(); console.log("▶️ Resumed"); }, 40_000);
+  // setTimeout(() => stream.disconnect(), 60_000);
 }
 
 // Execute functions
@@ -199,5 +221,5 @@ async function getSnapshot() {
   await deleteKey();
   await scanKeys();
   await getDeviceStatus();
-  // await getSnapshot();
+  await getStream();
 })();
