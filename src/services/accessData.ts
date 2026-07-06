@@ -10,11 +10,14 @@ import {
   IAnedyaGetDataReq,
   IAnedyaGetDataResp,
   AnedyaGetDataResp,
+  IAnedyaGetLatestDataReq,
   IAnedyaGetLatestDataResp,
   AnedyaGetLatestDataResp,
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders, _ITimeSeriesData } from "../common";
+import { validateResponse } from "../error_handler";
+import { AnedyaError } from "../errors";
 
 // ------------------------------ Get Data -----------------------------
 
@@ -48,7 +51,7 @@ interface _AnedyaGetDataResp {
  * const req = new AnedyaGetDataReq("temperature", from, to, 100);
  * const res = await getData(baseUrl, headers, ["node123"], req);
  * if (res.isSuccess && res.isDataAvailable) {
- *   console.log(res.data);
+ *   //console.log(res.data);
  * }
  * ```
  */
@@ -58,20 +61,18 @@ export const getData = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   accessDataReq: IAnedyaGetDataReq,
-): Promise<any> => {
+): Promise<AnedyaGetDataResp> => {
   const url = `${baseUrl}/data/getData`;
 
-  // Request payload expected by Anedya backend
   const requestData = {
     nodes: nodes,
     variable: accessDataReq.variable,
     from: Math.floor(accessDataReq.from / 1000),
     to: Math.floor(accessDataReq.to / 1000),
-    limit: accessDataReq.limit,
-    order: accessDataReq.order,
+    limit: accessDataReq.limit ?? 1000,
+    order: accessDataReq.order ?? "desc",
   };
 
-  // Generate request signature for secure communication
   const currentTime = Math.floor(Date.now() / 1000);
   const combinedHash = await anedyaSignature(
     requestData,
@@ -79,8 +80,7 @@ export const getData = async (
     currentTime,
   );
 
-  try {
-    // Required request headers for authentication & integrity
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -90,56 +90,46 @@ export const getData = async (
       "Content-Type": "application/json",
     };
 
-    // Perform the request
     const response = await fetch(url, {
       method: "POST",
       credentials: "same-origin",
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    // Initialize SDK response object
-    let res: IAnedyaGetDataResp = new AnedyaGetDataResp();
-    try {
-      // Parse raw backend response
-      let responseData: _AnedyaGetDataResp = await response.json();
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      res.isDataAvailable = false;
-      res.data = null;
-      // Map backend response into SDK response structure
-      if (responseData.success) {
-        let data: any = responseData.data;
-        if (
-          data == undefined ||
-          data == null ||
-          Object.keys(data).length === 0
-        ) {
-          res.isDataAvailable = false;
-        } else if (nodes.length === 1) {
-          data = data[nodes.toString()];
-          res.data = data;
-          res.isDataAvailable = true;
-        } else {
-          res.data = data;
-          res.isDataAvailable = true;
-        }
-      }
-      res.count = responseData.count;
-      res.startTime = responseData.startTime;
-      res.endTime = responseData.endTime;
-      return res;
-    } catch (error) {
-      // Handle malformed JSON or parsing issues
-      res.isSuccess = false;
-      res.error.reasonCode = response.status.toString();
-      res.error.errorMessage = response.statusText;
-      return res;
+
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetDataResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during Get data request:", error);
-    throw error;
-  }
+
+    const res = new AnedyaGetDataResp();
+    res.isSuccess = true;
+    res.isDataAvailable = false;
+    res.data = null;
+
+    let data: any = responseData.data;
+    if (data && Object.keys(data).length > 0) {
+      if (nodes.length === 1) {
+        data = data[nodes.toString()];
+      }
+      res.data = data;
+      res.isDataAvailable = true;
+    }
+
+    res.count = responseData.count;
+    res.startTime = responseData.startTime;
+    res.endTime = responseData.endTime;
+    return res;
+  };
+
+  return executeRequest();
 };
 
 // ------------------------------ Get Latest Data -----------------------------
@@ -157,7 +147,7 @@ interface _AnedyaGetLatestDataResp {
 }
 
 /**
- * Fetch the most recent data point for a given node and variable.
+ * Fetch the most recent data point from the given node and variable.
  *
  * @param baseUrl - Base URL of the Anedya API endpoint.
  * @param configHeaders - Authentication + signature headers configuration.
@@ -170,7 +160,7 @@ interface _AnedyaGetLatestDataResp {
  * const req = { variable: "temperature" };
  * const res = await fetchLatestData(baseUrl, headers, ["node123"], req);
  * if (res.isSuccess && res.isDataAvailable) {
- *   console.log("Latest Data:", res.data);
+ *   //console.log("Latest Data:", res.data);
  * }
  * ```
  */
@@ -179,11 +169,10 @@ export const fetchLatestData = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  accessDataReq: any,
-): Promise<any> => {
+  accessDataReq: IAnedyaGetLatestDataReq,
+): Promise<AnedyaGetLatestDataResp> => {
   const url = `${baseUrl}/data/latest`;
 
-  // Request payload for latest data
   const requestData = {
     nodes: nodes,
     variable: accessDataReq.variable,
@@ -194,7 +183,8 @@ export const fetchLatestData = async (
     configHeaders,
     currentTime,
   );
-  try {
+
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -203,48 +193,40 @@ export const fetchLatestData = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-
     const response = await fetch(url, {
       method: "POST",
       credentials: "same-origin",
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaGetLatestDataResp = new AnedyaGetLatestDataResp();
-    try {
-      const responseData: _AnedyaGetLatestDataResp = await response.json();
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      res.isDataAvailable = false;
-      res.data = null;
-      // Map latest data into SDK response
-      if (responseData.success) {
-        let data: any = responseData.data;
-        if (
-          data == undefined ||
-          data == null ||
-          Object.keys(data).length === 0
-        ) {
-          res.isDataAvailable = false;
-        } else if (nodes.length === 1) {
-          data = data[nodes.toString()];
-          res.data = data;
-          res.isDataAvailable = true;
-        } else {
-          res.data = data;
-          res.isDataAvailable = true;
-        }
-      }
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.reasonCode = response.status.toString();
-      res.error.errorMessage = response.statusText;
-      return res;
+
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetLatestDataResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during get latest data request:", error);
-    throw error;
-  }
+
+    const res = new AnedyaGetLatestDataResp();
+    res.isSuccess = true;
+    res.isDataAvailable = false;
+    res.data = null;
+
+    let data: any = responseData.data;
+    if (data && Object.keys(data).length > 0) {
+      if (nodes.length === 1) {
+        data = data[nodes.toString()];
+      }
+      res.data = data;
+      res.isDataAvailable = true;
+    }
+    return res;
+  };
+
+  return executeRequest();
 };

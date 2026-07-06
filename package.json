@@ -6,7 +6,7 @@
     "type": "git",
     "url": "https://github.com/anedyaio/anedya-js-frontend-sdk.git"
   },
-  "version": "0.0.1",
+  "version": "0.0.3-prerelease.0",
   "author": "Anedya Systems",
   "license": "Apache-2.0",
   "main": "dist/index.js",
@@ -26,9 +26,19 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
-    "test": "node tests/test.mjs"
+    "test": "node tests/test.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "prettier --check \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "start": "node examples/application-example.js",
+    "changeset": "changeset",
+    "changeset:status": "changeset status",
+    "changeset:version": "changeset version"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.31.0",
+    "@types/cbor": "^5.0.1",
+    "prettier": "^3.4.2",
     "tsup": "^8.5.0",
     "typescript": "^5.7.3"
   },
@@ -44,5 +54,11 @@
     "device-management",
     "API",
     "browser"
-  ]
+  ],
+  "dependencies": {
+    "cbor-x": "^1.6.4"
+  },
+  "overrides": {
+    "human-id": "4.1.3"
+  }
 }

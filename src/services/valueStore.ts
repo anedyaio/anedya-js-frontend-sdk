@@ -1,8 +1,8 @@
-/*
- Access Data from the Anedya platform side api.
-*/
+/**
+ * Access Data from the Anedya platform side api.
+ */
 import {
-  AnedyaSetKeyReq,
+  IAnedyaSetKeyReq,
   IAnedyaDeleteKeyResp,
   IAnedyaSetKeyResp,
   IAnedyaGetKeyReq,
@@ -17,6 +17,7 @@ import {
 } from "../models";
 import { anedyaSignature } from "../anedya_signature";
 import { IConfigHeaders } from "../common";
+import { validateResponse } from "../error_handler";
 import { AnedyaError } from "../errors";
 
 // ------------------------------ Set Value-Store -----------------------------
@@ -31,8 +32,8 @@ export const setKey = async (
   baseUrl: string,
   configHeaders: IConfigHeaders,
   nodes: string[],
-  reqConfig: AnedyaSetKeyReq,
-): Promise<any> => {
+  reqConfig: IAnedyaSetKeyReq,
+): Promise<AnedyaSetKeyResp> => {
   const url = `${baseUrl}/valuestore/setValue`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -57,7 +58,7 @@ export const setKey = async (
     currentTime,
   );
 
-  try {
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -66,7 +67,6 @@ export const setKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -75,23 +75,24 @@ export const setKey = async (
       body: JSON.stringify(requestData),
     });
 
-    let res: IAnedyaSetKeyResp = new AnedyaSetKeyResp();
-    try {
-      const responseData: _AnedyaSetKeyResp = await response.json();
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+    await validateResponse(response);
+
+    const responseData: _AnedyaSetKeyResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during set key: ", error);
-    throw error;
-  }
+
+    const res = new AnedyaSetKeyResp();
+    res.isSuccess = true;
+    return res;
+  };
+
+  return executeRequest();
 };
 
 // ------------------------------ Get Value-Store -----------------------------
@@ -117,7 +118,7 @@ export const getKey = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaGetKeyReq,
-): Promise<any> => {
+): Promise<AnedyaGetKeyResp> => {
   const url = `${baseUrl}/valuestore/getValue`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -140,7 +141,7 @@ export const getKey = async (
     currentTime,
   );
 
-  try {
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -149,7 +150,6 @@ export const getKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -157,32 +157,32 @@ export const getKey = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaGetKeyResp = new AnedyaGetKeyResp();
 
-    try {
-      const responseData: _AnedyaGetKeyResp = await response.json();
-      // console.log(responseData);
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      res.namespace = responseData.namespace;
-      res.key = responseData.key;
-      res.value = responseData.value;
-      res.type = responseData.type;
-      res.size = responseData.size;
-      res.modified = responseData.modified;
-      res.created = responseData.created;
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+    await validateResponse(response);
+
+    const responseData: _AnedyaGetKeyResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during get key request: ", error);
-    throw error;
-  }
+
+    const res = new AnedyaGetKeyResp();
+    res.isSuccess = true;
+    res.namespace = responseData.namespace;
+    res.key = responseData.key;
+    res.value = responseData.value;
+    res.type = responseData.type;
+    res.size = responseData.size;
+    res.modified = responseData.modified;
+    res.created = responseData.created;
+    return res;
+  };
+
+  return executeRequest();
 };
 
 // ------------------------------ Delete Value-Store -----------------------------
@@ -198,7 +198,7 @@ export const deleteKey = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaDeleteKeyReq,
-): Promise<any> => {
+): Promise<AnedyaDeleteKeyResp> => {
   const url = `${baseUrl}/valuestore/delete`;
   let Id;
   if (reqConfig.namespace.scope === "node") {
@@ -221,7 +221,7 @@ export const deleteKey = async (
     currentTime,
   );
 
-  try {
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -230,7 +230,6 @@ export const deleteKey = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -239,24 +238,24 @@ export const deleteKey = async (
       body: JSON.stringify(requestData),
     });
 
-    let res: IAnedyaDeleteKeyResp = new AnedyaDeleteKeyResp();
-    try {
-      const responseData: _AnedyaDeleteKeyResp = await response.json();
-      // console.log(responseData);
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+    await validateResponse(response);
+
+    const responseData: _AnedyaDeleteKeyResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during fetch operation:", error);
-    throw error;
-  }
+
+    const res = new AnedyaDeleteKeyResp();
+    res.isSuccess = true;
+    return res;
+  };
+
+  return executeRequest();
 };
 
 // ------------------------------  Scan Value-Store -----------------------------
@@ -276,7 +275,7 @@ export const scanKeys = async (
   configHeaders: IConfigHeaders,
   nodes: string[],
   reqConfig: IAnedyaScanKeysReq,
-): Promise<any> => {
+): Promise<AnedyaScanKeysResp> => {
   const url = `${baseUrl}/valuestore/scan`;
   let Id;
   if (reqConfig.filter.namespace.scope === "node") {
@@ -293,9 +292,9 @@ export const scanKeys = async (
       },
     },
     orderby: reqConfig.orderby,
-    order: reqConfig.order,
-    limit: reqConfig.limit,
-    offset: reqConfig.offset,
+    order: reqConfig.order ?? "desc",
+    limit: reqConfig.limit ?? 100,
+    offset: reqConfig.offset ?? 0,
   };
   const currentTime = Math.floor(Date.now() / 1000);
   const combinedHash = await anedyaSignature(
@@ -304,7 +303,7 @@ export const scanKeys = async (
     currentTime,
   );
 
-  try {
+  const executeRequest = async () => {
     const reqHeaders = {
       Authorization: configHeaders.authorizationMode,
       "x-Anedya-SignatureVersion": configHeaders.signatureVersion,
@@ -313,7 +312,6 @@ export const scanKeys = async (
       "X-Anedya-Signature": combinedHash,
       "Content-Type": "application/json",
     };
-    // console.log(reqHeaders);
 
     const response = await fetch(url, {
       method: "POST",
@@ -321,25 +319,27 @@ export const scanKeys = async (
       headers: reqHeaders,
       body: JSON.stringify(requestData),
     });
-    let res: IAnedyaScanKeysResp = new AnedyaScanKeysResp();
-    try {
-      const responseData: _AnedyaScanKeysResp = await response.json();
-      res.isSuccess = responseData.success;
-      res.error.errorMessage = responseData.error;
-      res.error.reasonCode = responseData.reasonCode;
-      res.count = responseData.count;
-      res.totalCount = responseData.totalCount;
-      res.data = responseData.data;
-      res.next = responseData.next;
-      return res;
-    } catch (error) {
-      res.isSuccess = false;
-      res.error.errorMessage = response.statusText;
-      res.error.reasonCode = response.status.toString();
-      return res;
+
+    await validateResponse(response);
+
+    const responseData: _AnedyaScanKeysResp = await response.json();
+
+    if (!responseData.success) {
+      throw new AnedyaError(
+        responseData.error,
+        responseData.reasonCode,
+        response.status,
+      );
     }
-  } catch (error) {
-    console.error("Error during scan vs operation: ", error);
-    throw error;
-  }
+
+    const res = new AnedyaScanKeysResp();
+    res.isSuccess = true;
+    res.count = responseData.count;
+    res.totalCount = responseData.totalCount;
+    res.data = responseData.data;
+    res.next = responseData.next;
+    return res;
+  };
+
+  return executeRequest();
 };

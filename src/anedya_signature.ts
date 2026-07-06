@@ -1,28 +1,42 @@
 import { IConfigHeaders } from "./common";
 
 export const anedyaSignature = async (
-  requestData: any,
+  requestData: unknown,
   configHeaders: IConfigHeaders,
   currentTime: number,
-): Promise<any> => {
+): Promise<string> => {
   try {
-    const encoder = new TextEncoder();
-    const bodyBytes = encoder.encode(JSON.stringify(requestData));
+    let bodyBytes: Uint8Array;
 
-    // Create SHA-256 hash of the bodyBytes
-    const bodyHashBuffer = await crypto.subtle.digest("SHA-256", bodyBytes);
+    if (requestData === null || requestData === undefined) {
+      // ✅ WebSocket case → empty body
+      bodyBytes = new Uint8Array();
+    } else {
+      // ✅ REST case → normal payload
+      const encoder = new TextEncoder();
+      bodyBytes = encoder.encode(JSON.stringify(requestData));
+    }
+
+    // SHA-256 of body
+    const bodyHashBuffer = await crypto.subtle.digest(
+      "SHA-256",
+      bodyBytes as BufferSource,
+    );
     const bodyHashBytes = new Uint8Array(bodyHashBuffer);
 
+    // Timestamp (same as before)
     const timeBytes = new Uint8Array(8);
-    new DataView(timeBytes.buffer).setBigUint64(0, BigInt(currentTime), false); // Big-endian
+    new DataView(timeBytes.buffer).setBigUint64(0, BigInt(currentTime), false);
 
-    // Combine [bodyHashBytes, timeBytes, signatureVersionBytes, tokenBytes]
+    // Combine bytes (same as before)
+
     const combinedBytes = new Uint8Array(
       bodyHashBytes.length +
         timeBytes.length +
         configHeaders.signatureVersionBytes.length +
         configHeaders.tokenBytes.length,
     );
+
     combinedBytes.set(bodyHashBytes, 0);
     combinedBytes.set(timeBytes, bodyHashBytes.length);
     combinedBytes.set(
@@ -36,16 +50,17 @@ export const anedyaSignature = async (
         configHeaders.signatureVersionBytes.length,
     );
 
-    // Compute SHA-256 hash of combinedBytes
+    // Final hash
+
     const combinedHashBuffer = await crypto.subtle.digest(
       "SHA-256",
       combinedBytes,
     );
-    const combinedHash = Array.from(new Uint8Array(combinedHashBuffer))
+
+    return Array.from(new Uint8Array(combinedHashBuffer))
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
-    return combinedHash;
   } catch (e) {
-    console.log(e);
+    throw e;
   }
 };
