@@ -94,8 +94,13 @@ jobs:
       # ── 3. NPM UPGRADE ────────────────────────────────────────────────────────
       # Node 22 ships with npm 10.x by default.
       # Trusted Publishing requires npm >= 11.5.1 to auto-detect OIDC environments.
+      #
+      # PINNED (not @latest): npm@latest is non-deterministic across CI runs.
+      # A newer npm@latest broke the `sigstore` dependency inside libnpmpublish,
+      # causing MODULE_NOT_FOUND errors during provenance generation.
+      # Pin to a known-good version. Update deliberately when needed.
       - name: Upgrade npm (required for Trusted Publishing ≥ 11.5.1)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.5.1
 
       # ── 4. INSTALL DEPENDENCIES ───────────────────────────────────────────────
       - name: Install Dependencies
