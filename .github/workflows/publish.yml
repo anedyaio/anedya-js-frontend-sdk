@@ -215,19 +215,21 @@ jobs:
           git push origin prerelease --follow-tags
 
       # ═════════════════════════════════════════════════════════════════════════
-      # MAIN BRANCH — POST-PUBLISH  (tag, push, GitHub Release)
+      # MAIN BRANCH — POST-PUBLISH  (commit, push, GitHub Release)
       # ═════════════════════════════════════════════════════════════════════════
 
-      # Create a plain `v1.2.0` annotated tag in addition to the scoped package
-      # tag Changesets creates (e.g., @anedyasystems/anedya-frontend-sdk@1.2.0).
-      # The plain tag is what GitHub Releases attaches to.
-      - name: Create Stable Version Tag
-        if: >-
-          steps.version_check.outputs.changed == 'true' &&
-          github.ref == 'refs/heads/main'
-        run: |
-          git tag -a "v${{ steps.version_check.outputs.version }}" \
-                  -m "Release v${{ steps.version_check.outputs.version }}"
+      # NOTE: No explicit `git tag` step needed here.
+      # `changeset publish` already creates a `v{version}` tag locally because
+      # this is a single-package (root-type) repo — Changesets uses the format
+      # `v${version}` for root repos, not `${name}@${version}`.
+      # `--follow-tags` below pushes that tag to GitHub automatically.
+      # - name: Create Stable Version Tag
+      #   if: >-
+      #     steps.version_check.outputs.changed == 'true' &&
+      #     github.ref == 'refs/heads/main'
+      #   run: |
+      #     git tag -a "v${{ steps.version_check.outputs.version }}" \
+      #             -m "Release v${{ steps.version_check.outputs.version }}"
 
       - name: Commit and Push Stable Release
         if: >-

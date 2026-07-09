@@ -20,15 +20,18 @@ export default defineConfig([
     entry: {
       anedya: "src/index.ts"
     },
-    format: ["iife"],               // IIFE format is required for CDN script tags
-    globalName: "Anedya",           // The variable name attached to the window object (e.g., window.Anedya)
-    minify: true,                   // Minify the bundle heavily for performance
+    format: ["iife"],
+    globalName: "Anedya",
+    minify: true,
     sourcemap: true,
     treeshake: true,
     splitting: false,
+    noExternal: [/.*/],
+    platform: "browser", // <-- CRITICAL: Forces esbuild to target browser mechanics
+    target: "es2020",    // <-- CRITICAL: Compiles code to clean browser-supported ECMA standard
     outExtension() {
       return {
-        js: ".min.js",              // Forces the output file name to be 'anedya.min.js'
+        js: ".min.js",
       };
     },
   },
