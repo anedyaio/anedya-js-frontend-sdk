@@ -271,3 +271,35 @@ jobs:
             --title "v${{ steps.version_check.outputs.version }}" \
             --notes "${{ steps.extract_changelog.outputs.notes }}" \
             --target main
+
+      # ── 11. SYNC MAIN BACK TO DEVELOP ────────────────────────────────────────
+      # Merges the stable release changes and tag updates back into develop.
+      # Falls back to creating a Pull Request if develop is a protected branch.
+      - name: Sync Main back to Develop
+        if: >-
+          steps.version_check.outputs.changed == 'true' &&
+          github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "::notice::Attempting to merge main back into develop..."
+          
+          # Fetch the latest develop branch
+          git fetch origin develop
+          git checkout develop
+          
+          # Merge main (which contains the new version bump and changelog)
+          git merge main --no-edit
+          
+          # Try to push directly (works if develop is not protected)
+          if git push origin develop; then
+            echo "::notice::Successfully merged and pushed main back to develop directly!"
+          else
+            echo "::warning::Direct push to develop was blocked. Creating a Pull Request instead..."
+            git checkout main
+            gh pr create \
+              --base develop \
+              --head main \
+              --title "chore(release): sync main v${{ steps.version_check.outputs.version }} to develop" \
+              --body "Automated PR to sync develop with the stable release v${{ steps.version_check.outputs.version }}." || true
+          fi
