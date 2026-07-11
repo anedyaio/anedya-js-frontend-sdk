@@ -81,14 +81,21 @@ const node   = anedya.newNode(client, "YOUR_NODE_ID");
 **Plain browser `<script>` tag (no bundler)** — load the pre-built IIFE bundle, which exposes everything on `window.AnedyaSDK`:
 
 ```html
-<script src="sdk-bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@anedyasystems/anedya-frontend-sdk"></script>
 <script>
-  const { Anedya } = window.AnedyaSDK;
+    const {
+      AnedyaError,
+      AnedyaScope,
+      AnedyaDataType,
+      AnedyaVariableType
+    } = window.Anedya;
 
-const anedya = new Anedya();
-const config = anedya.newConfig("YOUR_TOKEN_ID", "YOUR_TOKEN");
-const client = anedya.newClient(config);
-const node   = anedya.newNode(client, "YOUR_NODE_ID");
+    // --- Initialize Anedya SDK Client ---
+    const anedya = new window.Anedya.Anedya();
+    const connectConfig = anedya.newConfig(tokenId, token);
+    const client = anedya.newClient(connectConfig);
+    const node1 = anedya.newNode(client, nodeIds[0]);
+    const stream = anedya.newStream(client, streamId, streamUrl);
 
 </script>
 ```
