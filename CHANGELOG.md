@@ -1,10 +1,14 @@
 # @anedyasystems/anedya-frontend-sdk
 
-## 0.1.0-beta.4
+## 0.1.0
+
+### Minor Changes
+
+- refactor stream client to support multi-node subscriptions
 
 ### Patch Changes
 
-- 62880b3: add html example
+- chore: configure tsup to support minified CDN builds
 
 ## 0.1.0-beta.3
 
