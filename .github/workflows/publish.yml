@@ -94,8 +94,13 @@ jobs:
       # ── 3. NPM UPGRADE ────────────────────────────────────────────────────────
       # Node 22 ships with npm 10.x by default.
       # Trusted Publishing requires npm >= 11.5.1 to auto-detect OIDC environments.
+      #
+      # PINNED (not @latest): npm@latest is non-deterministic across CI runs.
+      # A newer npm@latest broke the `sigstore` dependency inside libnpmpublish,
+      # causing MODULE_NOT_FOUND errors during provenance generation.
+      # Pin to a known-good version. Update deliberately when needed.
       - name: Upgrade npm (required for Trusted Publishing ≥ 11.5.1)
-        run: npm install -g npm@latest
+        run: npm install -g npm@11.5.1
 
       # ── 4. INSTALL DEPENDENCIES ───────────────────────────────────────────────
       - name: Install Dependencies
@@ -215,19 +220,21 @@ jobs:
           git push origin prerelease --follow-tags
 
       # ═════════════════════════════════════════════════════════════════════════
-      # MAIN BRANCH — POST-PUBLISH  (tag, push, GitHub Release)
+      # MAIN BRANCH — POST-PUBLISH  (commit, push, GitHub Release)
       # ═════════════════════════════════════════════════════════════════════════
 
-      # Create a plain `v1.2.0` annotated tag in addition to the scoped package
-      # tag Changesets creates (e.g., @anedyasystems/anedya-frontend-sdk@1.2.0).
-      # The plain tag is what GitHub Releases attaches to.
-      - name: Create Stable Version Tag
-        if: >-
-          steps.version_check.outputs.changed == 'true' &&
-          github.ref == 'refs/heads/main'
-        run: |
-          git tag -a "v${{ steps.version_check.outputs.version }}" \
-                  -m "Release v${{ steps.version_check.outputs.version }}"
+      # NOTE: No explicit `git tag` step needed here.
+      # `changeset publish` already creates a `v{version}` tag locally because
+      # this is a single-package (root-type) repo — Changesets uses the format
+      # `v${version}` for root repos, not `${name}@${version}`.
+      # `--follow-tags` below pushes that tag to GitHub automatically.
+      # - name: Create Stable Version Tag
+      #   if: >-
+      #     steps.version_check.outputs.changed == 'true' &&
+      #     github.ref == 'refs/heads/main'
+      #   run: |
+      #     git tag -a "v${{ steps.version_check.outputs.version }}" \
+      #             -m "Release v${{ steps.version_check.outputs.version }}"
 
       - name: Commit and Push Stable Release
         if: >-
@@ -264,3 +271,35 @@ jobs:
             --title "v${{ steps.version_check.outputs.version }}" \
             --notes "${{ steps.extract_changelog.outputs.notes }}" \
             --target main
+
+      # ── 11. SYNC MAIN BACK TO DEVELOP ────────────────────────────────────────
+      # Merges the stable release changes and tag updates back into develop.
+      # Falls back to creating a Pull Request if develop is a protected branch.
+      - name: Sync Main back to Develop
+        if: >-
+          steps.version_check.outputs.changed == 'true' &&
+          github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "::notice::Attempting to merge main back into develop..."
+          
+          # Fetch the latest develop branch
+          git fetch origin develop
+          git checkout develop
+          
+          # Merge main (which contains the new version bump and changelog)
+          git merge main --no-edit
+          
+          # Try to push directly (works if develop is not protected)
+          if git push origin develop; then
+            echo "::notice::Successfully merged and pushed main back to develop directly!"
+          else
+            echo "::warning::Direct push to develop was blocked. Creating a Pull Request instead..."
+            git checkout main
+            gh pr create \
+              --base develop \
+              --head main \
+              --title "chore(release): sync main v${{ steps.version_check.outputs.version }} to develop" \
+              --body "Automated PR to sync develop with the stable release v${{ steps.version_check.outputs.version }}." || true
+          fi
